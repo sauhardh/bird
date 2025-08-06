@@ -1,11 +1,16 @@
 # read the config file
 # call other functionality
 
+from dotenv import load_dotenv
+
 import logging
 from pathlib import Path
 import json
+import os
 
 from bot.core import Parser
+from bot.core import RephraseAI
+from bot.core import Content
 
 logging.basicConfig(
     level=logging.INFO, format=" %(name)s | %(levelname)s => %(message)s"
@@ -15,12 +20,18 @@ logging.basicConfig(
 def main():
     file_path = Path.cwd().joinpath("config").joinpath("news-site.json")
     file = open(file_path).read()
-    obj = json.loads(file)
+    news_sites = json.loads(file)
 
-    print("url: ", obj["1"])
-    Parser(obj["1"]).parse()
-    # for x in obj:
-    #     print("url", obj[x])
+    env_path = Path.cwd().joinpath(".env")
+    load_dotenv(env_path)
 
-    print("f", file_path)
-    pass
+    api_key = os.getenv("GROQ_API_KEY")
+
+    for site in news_sites:
+        print("site", site)
+        l = Parser(news_sites[site]).parse()
+        # print("l", l)
+
+        r = RephraseAI(api_key, None).message(l)
+
+        print("list for", site, "_____", r)
