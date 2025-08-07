@@ -2,7 +2,6 @@ from groq import Groq
 from typing import Optional, List
 import time
 import logging
-import re
 import json
 
 from config.constants import MODEL, AI_CONTENT
@@ -32,7 +31,7 @@ class RephraseAI:
             )
             time.sleep(1)
 
-            more_content = Content(article["link"]).get_content()
+            more_content: str = Content(article["link"]).get_content()
             user_content = f"""
             You are evaluating a news article for its viral potential.
 
@@ -90,6 +89,11 @@ class RephraseAI:
                 logging.error("JSON decode error", e)
                 return None
 
+            string_content["link"] = article.get("link", None)
+            string_content["published"] = article.get("published", None)
+            string_content["thumbnail"] = article.get("thumbnail", None)
+
+            print("final content", string_content)
             rephrased_news_list.append(string_content)
 
         return rephrased_news_list

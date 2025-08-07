@@ -58,5 +58,5 @@ Current viral themes: {VIRAL_TOKENS}
 
 MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
 
-DISCORD_ACCEPT_WEBHOOK = "https://discord.com/api/webhooks/1402907173918605414/rR9D_G7IpjUMFtpJm1EJg_-rCdrzhQgRIL79adsxUNi-dYNAxSi6PXj7MpIXBvA_1QNq"
-DISCORD_REJECT_WEBHOOK = " https://discord.com/api/webhooks/1402906383070007337/pcsCrYTUE2DMX-eAoXZ_ABUE995m2fTPOucgv7RWiFxt9fmzt0hImIDt-nBHqxCSTNMK"
+DISCORD_ACCEPT_WEBHOOK: str = "https://discord.com/api/webhooks/1402907173918605414/rR9D_G7IpjUMFtpJm1EJg_-rCdrzhQgRIL79adsxUNi-dYNAxSi6PXj7MpIXBvA_1QNq"
+DISCORD_REJECT_WEBHOOK: str = " https://discord.com/api/webhooks/1402906383070007337/pcsCrYTUE2DMX-eAoXZ_ABUE995m2fTPOucgv7RWiFxt9fmzt0hImIDt-nBHqxCSTNMK"

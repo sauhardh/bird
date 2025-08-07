@@ -3,6 +3,8 @@ import feedparser
 import logging
 from typing import TypedDict, Optional, List
 from config.constants import NUMBER_OF_NEWS
+from bot.time import Clock
+from datetime import datetime
 
 
 class NewsCollectionFormat(TypedDict):
@@ -33,9 +35,22 @@ class Parser:
     """
 
     url: str = None
+    time_compare: bool = False
+    clock: Clock
+    last_run_time: str
 
     def __init__(self, url: str):
         self.url = url
+
+    def compare_time(self, last_run_time: str | None):
+        if last_run_time:
+            self.last_run_time = last_run_time
+            self.time_compare = True
+            self.clock = Clock()
+        else:
+            self.time_compare = False
+
+        return self
 
     def parse(self) -> List:
         if self.url is None:
@@ -50,11 +65,22 @@ class Parser:
         news_items: List[NewsCollectionFormat] = []
 
         for entry in feed.entries[:entry_len]:
+            published = entry.get("published", None)
+
+            if self.time_compare and published:
+                published: datetime = self.clock.convert_to_datetime(published)
+
+                if not self.clock.compare_time(published, self.last_run_time):
+                    logging.info(
+                        f"This content is older({published}) than the last run time {self.last_run_time}. Skipping!"
+                    )
+                    continue
+
             news_obj: NewsCollectionFormat = {
                 "title": entry.get("title", ""),
                 "summary": entry.get("summary", ""),
                 "link": entry.get("link", ""),
-                "published": entry.get("published", None),
+                "published": published,
                 "thumbnail": entry.get("media_thumbnail", None)[0]
                 if "media_thumbnail" in entry
                 else None,

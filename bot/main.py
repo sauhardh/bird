@@ -9,6 +9,7 @@ from typing import List
 from bot.core import Parser
 from bot.core import RephraseAI
 from .discord import DiscordWebhook
+from .time import Clock
 
 logging.basicConfig(
     level=logging.INFO, format=" <%(name)s>   %(levelname)s => %(message)s "
@@ -24,9 +25,11 @@ def main():
     load_dotenv(env_path)
     api_key = os.getenv("GROQ_API_KEY")
 
+    last_run_time: str | None = Clock().get_time_log()
+
     _news_collection: List = []
     for site in news_sites:
-        news_list = Parser(news_sites[site]).parse()
+        news_list = Parser(news_sites[site]).compare_time(last_run_time).parse()
         rephrased_list = RephraseAI(api_key, None).message(news_list)
 
         _news_collection.extend(rephrased_list)
@@ -41,4 +44,4 @@ def main():
     # sends this info to discord
     DiscordWebhook().set_reject().send(rejected_news).set_accept().send(accepted_news)
 
-    print("rejected_news", rejected_news)
+    print("accepted_news", accepted_news)
