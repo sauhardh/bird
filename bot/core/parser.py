@@ -2,7 +2,7 @@ import feedparser
 
 import logging
 from typing import TypedDict, Optional, List
-from bot.constants import NUMBER_OF_NEWS
+from config.constants import NUMBER_OF_NEWS
 
 
 class NewsCollectionFormat(TypedDict):
@@ -14,6 +14,24 @@ class NewsCollectionFormat(TypedDict):
 
 
 class Parser:
+    """
+    Parses essential data from an RSS (Really Simple Syndication) feed.
+
+    This class/function extracts the latest news articles from a news website's RSS feed,
+    which is typically provided in XML format. It returns a structured list of news items.
+
+    Parameters:
+        url (str): The URL of the RSS feed for a specific news website.
+
+    Returns:
+        List[dict]: A list of dictionaries, where each dictionary represents a news article with the following keys:
+            - "title" (str): The headline of the article.
+            - "summary" (str): A short summary or excerpt from the article.
+            - "link" (str): The URL link to the full article.
+            - "published" (str): The publication date and time of the article.
+            - "thumbnail" (str): A URL to the article’s thumbnail image, if available.
+    """
+
     url: str = None
 
     def __init__(self, url: str):

@@ -2,8 +2,6 @@
     "1": "https://feeds.bbci.co.uk/news/world/rss.xml",
     "2": "https://feeds.nbcnews.com/nbcnews/public/news",
     "3": "https://www.aljazeera.com/xml/rss/all.xml",
-    "4": "https://www.nytimes.com/svc/collections/v1/publish/https://www.nytimes.com/section/world/rss.xml",
-    "5": "https://globalnews.ca/world/feed/",
-    "6": "https://feeds.feedburner.com/time/world",
-    "7": "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms"
+    "4": "https://globalnews.ca/world/feed/",
+    "5": "https://timesofindia.indiatimes.com/rssfeeds/296589292.cms"
 }
