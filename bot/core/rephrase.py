@@ -9,12 +9,12 @@ from .content import Content
 
 
 class RephraseAI:
-    client = None
-    model: None
+    client: Groq
+    model: str
 
-    def __init__(self, _api_key: str, model: Optional[str]):
+    def __init__(self, model: Optional[str]):
         # This automatically infers the api_key argument from the GROQ_API_KEY environment variable if it is not provided.
-        self.client = Groq(api_key=_api_key)
+        self.client = Groq()
         self.model = model if model else MODEL
 
     def message(self, news_list: dict) -> List:
@@ -93,7 +93,6 @@ class RephraseAI:
             string_content["published"] = article.get("published", None)
             string_content["thumbnail"] = article.get("thumbnail", None)
 
-            print("final content", string_content)
             rephrased_news_list.append(string_content)
 
         return rephrased_news_list

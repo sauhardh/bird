@@ -68,11 +68,13 @@ class Parser:
             published = entry.get("published", None)
 
             if self.time_compare and published:
-                published: datetime = self.clock.convert_to_datetime(published)
+                published: datetime | None = self.clock.convert_to_datetime(published)
 
-                if not self.clock.compare_time(published, self.last_run_time):
+                if published and (
+                    not self.clock.compare_time(published, self.last_run_time)
+                ):
                     logging.info(
-                        f"This content is older({published}) than the last run time {self.last_run_time}. Skipping!"
+                        f"SKIPPING!: This content is older({published}) than the last run time {self.last_run_time}."
                     )
                     continue
 

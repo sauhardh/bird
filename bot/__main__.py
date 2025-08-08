@@ -1,4 +1,4 @@
-from bot.main import main
+from bot.main import Bird
 
 if __name__ == "__main__":
-    main()
+    Bird().main()

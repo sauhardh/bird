@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from email.utils import parsedate_to_datetime
+import logging
 
 
 class Clock:
@@ -17,11 +18,18 @@ class Clock:
             return None
         return self.file_path.read_text().strip()
 
-    def convert_to_datetime(self, date_str: str) -> datetime:
+    def convert_to_datetime(self, date_str: str) -> datetime | None:
         """
         Convert `Thu, 07 Aug 2025 12:20:31 GMT` like format to `2025-08-07 17:02:50.820296+00:00`
         """
-        return parsedate_to_datetime(date_str)
+        try:
+            return parsedate_to_datetime(date_str)
+        except (TypeError, ValueError):
+            try:
+                return datetime.fromisoformat(date_str)
+            except ValueError:
+                logging.error("Failed to parse the time")
+                return None
 
     # Compares arg_time with base_time. if arg_time is > base_time then returns True
     def compare_time(self, arg_time: str | datetime, base_time: str) -> bool:
@@ -35,8 +43,9 @@ class Clock:
 
         return arg_time > base_time
 
-    def save_time_log(self, data: str):
+    def save_time_log(self):
         """
         Saves the time to `./config/time.txt`
         """
-        self.file_path.write_text(data)
+        dt: str = str(datetime.now(timezone.utc))
+        self.file_path.write_text(dt)
