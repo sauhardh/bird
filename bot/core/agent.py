@@ -104,7 +104,8 @@ class Agent:
 
     def find_duplicate(self, news_list: dict) -> list:
         formatted_news_list: list[dict] = [
-            {news["id"]: news["rephrased_summary"]} for news in news_list
+            {news.get("id", -1): news.get("rephrased_summary", "")}
+            for news in news_list
         ]
 
         formatted_news_json = json.dumps(

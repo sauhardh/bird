@@ -11,6 +11,7 @@ from bot.core import Parser
 from bot.core import Agent
 from .discord import DiscordWebhook
 from .time import Clock
+from bot.core import Keyword
 
 
 logging.basicConfig(
@@ -79,12 +80,20 @@ class Bird:
         rejected_news, accepted_news = [], []
 
         for news in news_collection:
-            if news["viral"] and news["viral_score"] >= 7:
+            if news.get("viral", True) and news.get("viral_score", 8) >= 7:
                 accepted_news.append(news)
             else:
                 rejected_news.append(news)
 
         return (rejected_news, accepted_news)
+
+    def insert_entity(self, news_list: list[dict]) -> list[dict]:
+        keyword = Keyword()
+
+        for news in news_list:
+            news["entity"] = keyword.extract_entities(news.get("rephrased_title", None))
+
+        return news_list
 
     def main(self):
         news_sites = self.load_news_site_url()
@@ -105,19 +114,18 @@ class Bird:
             )
             sys.exit()
 
-        # dedup: list = Deduplicate().duplicate_index(
-        #     [news["rephrased_summary"] for news in accepted_news]
-        # )
-
         duplicates: list = Agent().find_duplicate(news_list=accepted_news)
-        duplicate_news = [news for news in accepted_news if news["id"] in duplicates]
-        final_news_list = [
-            news for news in accepted_news if news["id"] not in duplicates
+        duplicate_news = [
+            news for news in accepted_news if news.get("id", -1) in duplicates
+        ]
+        accepted_news = [
+            news for news in accepted_news if news.get("id", -1) not in duplicates
         ]
 
-        discord.set_reject().send(duplicate_news).set_accept().send(final_news_list)
+        discord.set_reject().send(duplicate_news).set_accept().send(accepted_news)
 
-        print("accepted news", final_news_list)
+        final_news_list: list[dict] = self.insert_entity(accepted_news)
+        print("Final news list", final_news_list)
 
         # saves the time
         Clock().save_time_log()

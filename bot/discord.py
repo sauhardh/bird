@@ -61,8 +61,13 @@ class DiscordWebhook:
                 "contents": "",
                 "embeds": [
                     {
-                        "title": obj["rephrased_title"],
-                        "description": obj["rephrased_summary"],
+                        "title": obj.get(
+                            "rephrased_title", "ERROR: Failed to get rephrased_title"
+                        ),
+                        "description": obj.get(
+                            "rephrased_summary",
+                            "ERROR: Failed to get rephrased_summary",
+                        ),
                         "color": color,
                     }
                 ],
