@@ -28,14 +28,20 @@ class DiscordWebhook:
         if self.flag == "info":
             data = {
                 "contents": "",
-                "embeds": {"title": title, "description": info, "color": 3447003},
+                "embeds": [
+                    {
+                        "title": title,
+                        "description": info,
+                        "color": 0x347C1B,
+                    }
+                ],
             }
 
             response = requests.post(DISCORD_INFO_WEBHOOK, json=data)
             if response.status_code == 204:
-                logging.info(f"{self.flag}d sent to discord channel successfully")
+                logging.info(f"{self.flag} sent to discord channel successfully")
             else:
-                logging.info(f"Failed to send {self.flag} to discord channel")
+                logging.warning(f"Failed to send {self.flag} to discord channel")
 
         return self
 
@@ -68,8 +74,8 @@ class DiscordWebhook:
             )
 
             if response.status_code == 204:
-                logging.info(f"{self.flag}d news sent to discord channel successfully")
+                logging.info(f"{self.flag}ed news sent to discord channel successfully")
             else:
-                logging.info(f"Failed to send {self.flag} to discord channel")
+                logging.warning(f"Failed to send {self.flag}ed news to discord channel")
 
         return self

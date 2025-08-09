@@ -1,15 +1,14 @@
 from dotenv import load_dotenv
 
 import logging
-from pathlib import Path
 import json
 import os
-from typing import List, Tuple
 import sys
+from pathlib import Path
 
 
 from bot.core import Parser
-from bot.core import RephraseAI
+from bot.core import Agent
 from .discord import DiscordWebhook
 from .time import Clock
 
@@ -43,36 +42,36 @@ class Bird:
         load_dotenv(self.env_path)
         return os.getenv("GROQ_API_KEY")
 
-    def insert_id(self, news_list: List[dict]) -> List[dict]:
+    def insert_id(self, news_list: list[dict]) -> list[dict]:
         """
-        This inserts `id` key on each dictionary. id starts from `1`
+        This inserts `id` key on each dictionary. id starts from `0`
         """
         for id, news in enumerate(news_list):
-            news["id"] = id + 1
+            news["id"] = id
 
         return news_list
 
-    def get_news_and_rephrase(self, news_sites: dict[str, str]) -> List[dict]:
+    def get_news_and_rephrase(self, news_sites: dict[str, str]) -> list[dict]:
         """
         Get the news from RSS feed and rephrase it using AI.
-        uses `Parser` and `RephraseAI` class
+        uses `Parser` and `Agent` class
         """
         _api_key: str | None = self.load_env_key()
 
-        news_collection: List[dict] = []
+        news_collection: list[dict] = []
 
         for site in news_sites:
-            news_list: List[dict] = (
+            news_list: list[dict] = (
                 Parser(news_sites[site]).compare_time(self.last_run_time).parse()
             )
-            rephrased_list: List[dict] = RephraseAI(None).message(news_list)
+            rephrased_list: list[dict] = Agent().message(news_list)
             news_collection.extend(rephrased_list)
 
         return news_collection
 
     def separate_news(
-        self, news_collection: List[dict]
-    ) -> Tuple[List[dict], List[dict]]:
+        self, news_collection: list[dict]
+    ) -> tuple[list[dict], list[dict]]:
         """
         This separate the news based on if it is `viral` and based on `viral_score`.
         if `viral` is `True` and    `viral_score` >= 7, post is accepted else rejected
@@ -94,28 +93,31 @@ class Bird:
         (rejected_news, accepted_news) = self.separate_news(news_collection)
 
         # sends this info to discord
-        discord = (
-            DiscordWebhook()
-            .set_reject()
-            .send(rejected_news)
-            .set_accept()
-            .send(accepted_news)
-        )
+        discord = DiscordWebhook().set_reject().send(rejected_news)
 
         # gives id to each news based on index
         accepted_news = self.insert_id(accepted_news)
 
-        print("accepted news", accepted_news)
-
         if len(accepted_news) <= 0:
-            logging.info("EARLY EXIT: No New news Found.")
+            logging.info("EARLY EXIT: No new News Found.")
             discord.set_info().send_info(
                 "EARLY EXIT", f"No new News Found: {accepted_news}"
             )
             sys.exit()
 
-        for id, each_news in enumerate(accepted_news):
-            pass
+        # dedup: list = Deduplicate().duplicate_index(
+        #     [news["rephrased_summary"] for news in accepted_news]
+        # )
+
+        duplicates: list = Agent().find_duplicate(news_list=accepted_news)
+        duplicate_news = [news for news in accepted_news if news["id"] in duplicates]
+        final_news_list = [
+            news for news in accepted_news if news["id"] not in duplicates
+        ]
+
+        discord.set_reject().send(duplicate_news).set_accept().send(final_news_list)
+
+        print("accepted news", final_news_list)
 
         # saves the time
         Clock().save_time_log()

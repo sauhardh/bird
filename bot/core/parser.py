@@ -1,7 +1,7 @@
 import feedparser
 
 import logging
-from typing import TypedDict, Optional, List
+from typing import TypedDict
 from config.constants import NUMBER_OF_NEWS
 from bot.time import Clock
 from datetime import datetime
@@ -11,8 +11,8 @@ class NewsCollectionFormat(TypedDict):
     title: str
     summary: str
     link: str
-    published: Optional[str]
-    thumbnail: Optional[dict]
+    published: str | None
+    thumbnail: dict | None
 
 
 class Parser:
@@ -26,7 +26,7 @@ class Parser:
         url (str): The URL of the RSS feed for a specific news website.
 
     Returns:
-        List[dict]: A list of dictionaries, where each dictionary represents a news article with the following keys:
+        list[dict]: A list of dictionaries, where each dictionary represents a news article with the following keys:
             - "title" (str): The headline of the article.
             - "summary" (str): A short summary or excerpt from the article.
             - "link" (str): The URL link to the full article.
@@ -52,7 +52,7 @@ class Parser:
 
         return self
 
-    def parse(self) -> List:
+    def parse(self) -> list:
         if self.url is None:
             logging.error(
                 "url field is None. Please call '__init__()' first and pass the url"
@@ -62,7 +62,7 @@ class Parser:
         feed = feedparser.parse(self.url)
         entry_len = min(NUMBER_OF_NEWS, len(feed.entries))
 
-        news_items: List[NewsCollectionFormat] = []
+        news_items: list[NewsCollectionFormat] = []
 
         for entry in feed.entries[:entry_len]:
             published = entry.get("published", None)

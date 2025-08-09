@@ -1,3 +1,4 @@
 from .parser import Parser
-from .rephrase import RephraseAI
+from .agent import Agent
 from .content import Content
+from .deduplicate import Deduplicate
