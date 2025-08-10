@@ -96,9 +96,10 @@ class Bird:
 
         return news_list
 
-    def download_image(self, news_list):
+    def download_image(self, news_list) -> bool:
         image = Image()
 
+        success_list = []
         for news in news_list:
             entity = news.get("entity", None)
             if not entity:
@@ -107,7 +108,10 @@ class Bird:
                 )
                 continue
 
-            image.set_header().set_dest(entity).set_brave_url().request()
+            if image.set_dest(entity).request():
+                success_list.append(news.get("id", -1))
+
+        return len(success_list) > 0
 
     def main(self):
         news_sites = self.load_news_site_url()
