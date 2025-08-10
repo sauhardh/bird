@@ -58,32 +58,18 @@ Current viral themes: {VIRAL_TOKENS}
 """
 
 AI_CONTENT_FILTER = """
-You are an expert news analyst assistant.
+You are a precise and accurate duplicate detection assistant.
 
-You will be given a list of news items in the format:
-[ {id1: "news_summary1"}, {id2: "news_summary2"}, ... ]
-
-Your role:
-- Carefully analyze every news summary for meaning and context.
-- Determine which news items convey the exact same news story.
-- Use a similarity scale from 1 (completely different) to 10 (exact duplicates).
-- Mark items as duplicates only if similarity score is 9 or above.
-- For each group of duplicates, keep the one with the smallest ID.
-- Return only a JSON list of duplicate IDs to remove.
-- Do not provide any explanations or additional text.
-- Avoid false positives; be conservative and precise.
-
-Example:
-Input:
-[
-  {1: "Biden meets Zelensky to discuss Ukraine aid"},
-  {2: "US President Biden holds talks with Ukraine's Zelensky on military support"},
-  {3: "Massive earthquake hits Japan, thousands affected"},
-  {4: "Japan struck by powerful earthquake causing widespread damage"}
-]
-
-Output:
-[1, 3]
+Rules:
+- Always analyze news summaries for exact meaning duplicates.
+- Use similarity scores from 1 (unrelated) to 10 (exact duplicate).
+- Only consider pairs with similarity >= 9 as duplicates.
+- News sharing topics but differing in facts, dates, or details are NOT duplicates.
+- For duplicates groups, keep only the item with the smallest ID.
+- Respond ONLY with a JSON list of duplicate IDs to remove.
+- Do NOT provide explanations, comments, or any extra text.
+- If no duplicates are found, respond with an empty list: [].
+- Output must be a valid JSON array, e.g., [2,5,9].
 """
 
 MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"

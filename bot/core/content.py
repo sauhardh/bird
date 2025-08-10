@@ -11,7 +11,6 @@ class Content:
 
     Returns:
         txt (str): news content.
-
     """
 
     link: str

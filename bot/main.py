@@ -11,6 +11,7 @@ from bot.core import Parser
 from bot.core import Agent
 from .discord import DiscordWebhook
 from .time import Clock
+from bot.core import Image
 from bot.core import Keyword
 
 
@@ -95,6 +96,19 @@ class Bird:
 
         return news_list
 
+    def download_image(self, news_list):
+        image = Image()
+
+        for news in news_list:
+            entity = news.get("entity", None)
+            if not entity:
+                logging.warning(
+                    f"FORMAT ERROR: no entity key found on dictionary for index {news.get('id', -1)}"
+                )
+                continue
+
+            image.set_header().set_dest(entity).set_brave_url().request()
+
     def main(self):
         news_sites = self.load_news_site_url()
         news_collection = self.get_news_and_rephrase(news_sites)
@@ -127,5 +141,6 @@ class Bird:
         final_news_list: list[dict] = self.insert_entity(accepted_news)
         print("Final news list", final_news_list)
 
+        self.download_image(news_list=final_news_list)
         # saves the time
         Clock().save_time_log()
