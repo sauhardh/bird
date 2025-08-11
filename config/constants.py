@@ -77,3 +77,34 @@ MODEL: str = "meta-llama/llama-4-scout-17b-16e-instruct"
 DISCORD_ACCEPT_WEBHOOK: str = "https://discord.com/api/webhooks/1402907173918605414/rR9D_G7IpjUMFtpJm1EJg_-rCdrzhQgRIL79adsxUNi-dYNAxSi6PXj7MpIXBvA_1QNq"
 DISCORD_REJECT_WEBHOOK: str = " https://discord.com/api/webhooks/1402906383070007337/pcsCrYTUE2DMX-eAoXZ_ABUE995m2fTPOucgv7RWiFxt9fmzt0hImIDt-nBHqxCSTNMK"
 DISCORD_INFO_WEBHOOK: str = "https://discord.com/api/webhooks/1403328283327856821/_iO4i3JyL2ydrawjHRDFsxsF4GXEcgBnsg5LBui0uThqv9eGCcGtH35vPTIv-7onjgTS"
+
+
+CENSOR_WORDS: set = {
+    # Violence-related terms
+    "death",
+    "die",
+    "dead",
+    "kill",
+    "murder",
+    "suicide",
+    "rape",
+    # Sexual content
+    "sex",
+    "porn",
+    "fuck",
+    "dick",
+    "pussy",
+    "ass",
+    "tits",
+    "erotic",
+    # Profanity and slurs
+    "bitch",
+    "nigger",
+    "nigga",
+    "fag",
+    "whore",
+    "slut",
+    "cunt",
+    # Sensitive terms
+    "nazi",
+}

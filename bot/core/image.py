@@ -1,11 +1,17 @@
 from bs4 import BeautifulSoup
 import requests
+from duckduckgo_search import DDGS
+from PIL import Image, ImageFont, ImageDraw
+from PIL.Image import Image as PILImage
+from PIL.ImageDraw import ImageDraw as PILImageDraw
+
 import urllib.parse
 import logging
 from pathlib import Path
 import random
 import time
-from duckduckgo_search import DDGS
+
+from config.constants import CENSOR_WORDS
 
 
 class Image:
@@ -18,7 +24,6 @@ class Image:
     url_flag: str = None
 
     USER_AGENT = [
-        # A few real browser UA strings
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15",
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36",
@@ -47,13 +52,11 @@ class Image:
     def set_dest(self, entity: str):
         self.entity = entity
         self.encoded_entity = urllib.parse.quote_plus(string=entity)
-
         return self
 
     def set_brave_url(self):
         self.url_flag = "brave"
         self.url = f"https://search.brave.com/images?q={self.encoded_entity}&source=web"
-
         return self
 
     def set_duckduckgo_url(self):
@@ -61,7 +64,6 @@ class Image:
         self.url = (
             f"https://duckduckgo.com/?q={self.encoded_entity}&iax=images&ia=images"
         )
-
         return self
 
     def select_img(self, idx: int = 0) -> str | None:
@@ -70,7 +72,6 @@ class Image:
                 f"Index {idx} out of range for images_divs length {len(self.imgs) if self.imgs else 0}"
             )
             return None
-
         return self.imgs[idx]
 
     def request_img(
@@ -111,7 +112,6 @@ class Image:
                         ext = ".jpg"
 
                 self.set_dest_path(ext=ext)
-
                 with open(self.dest_path, "wb") as f:
                     f.write(res.content)
                     logging.info(
@@ -161,5 +161,126 @@ class Image:
             return False
 
         self.max_req = min(self.max_req, len(self.imgs))
-
         return self.request_img()
+
+
+# --------------------#
+#       OVERLAY       #
+# --------------------#
+
+
+class Overlay:
+    """
+    This overlay text on the image like a thumbnail
+    """
+
+    path: Path
+    img: PILImage
+    img_path: Path
+    txt: str
+
+    def __init__(self):
+        self.path = Path.cwd().joinpath("config")
+        self.filter_list = ["death", "die", "dead", "sex", ""]
+
+    def find_img_to_draw(self, name: str) -> bool:
+        self.img_path = self.path.joinpath("imgs").joinpath(name)
+
+        if not self.img_path.exists():
+            logging.warning(
+                f"No directory or image of such exists. __Path lookup__: {self.img_path}"
+            )
+            return False
+
+        self.img = Image.open(self.img_path).convert("RGBA")
+        return True
+
+    def load_font(self):
+        try:
+            if not self.img:
+                logging.warning(
+                    "No image found. Please call `find_img_to_draw()` beforehand"
+                )
+
+            self.font = ImageFont.truetype(
+                self.path.joinpath("Roboto-Medium.ttf"),
+                size=int(self.img.height * 0.065),
+            )
+        except OSError:
+            self.font = ImageFont.load_default()
+        return self
+
+    def wrap_text(self, draw: PILImageDraw, max_width: int) -> list:
+        lines = []
+        words = self.txt.split(" ")
+        line = ""
+
+        for word in words:
+            if any(
+                word.lower().startswith(censor_word) for censor_word in CENSOR_WORDS
+            ):
+                letters = list(word)
+                letters.insert(1, "*")
+                word = "".join(letters)
+
+            test_line = f"{line} {word}".strip()
+            bbox = draw.textbbox((0, 0), test_line, font=self.font)
+            line_w = bbox[2] - bbox[0]
+
+            if line_w <= max_width:
+                line = test_line
+            else:
+                lines.append(line)
+                line = word
+            lines.append(line)
+
+            return lines
+
+    def text_overlay(self, txt: str):
+        padding = 20
+        max_width = self.img.width - padding
+        self.txt = txt
+
+        overlay = Image.new("RGBA", self.img.size, (255, 255, 255, 0))
+        draw: PILImageDraw = ImageDraw.Draw(overlay)
+
+        lines: list = self.wrap_text(draw, max_width)
+        line_height = self.font.getbbox("Ay")[3] - self.font.getbbox("Ay")[1]
+        total_height = line_height * len(lines) + (len(lines) - 1) * 10
+        # position to start text on y axis
+        y = self.img.height - total_height - (padding * 2)
+
+        for idx, line in enumerate(lines):
+            bbox = draw.textbbox(
+                (
+                    0,
+                    0,
+                ),
+                line,
+                font=self.font,
+            )
+
+            text_w = bbox[2] - bbox[0]
+            text_h = bbox[3] - bbox[1]
+            x = (self.img.width - text_w) / 2
+
+            # semi-transparent-background
+            bg_padding_x = 10
+            bg_padding_y = 5
+            draw.rectangle(
+                [
+                    x - bg_padding_x,
+                    y - bg_padding_y + (idx * 3),
+                    x + text_w + bg_padding_x,
+                    y + text_h + bg_padding_y,
+                ],
+                fill=(0, 0, 0, 145),
+            )
+
+            draw.text((x, y), line, font=self.font, fill="white")
+            y += line_height + (bg_padding_y * 2) + 1
+
+        merged = Image.alpha_composite(self.img, overlay)
+        merged.convert("RGB").save(self.img_path, quality=90)
+        logging.info(f"Thumbnail saved: {self.img_path}")
+

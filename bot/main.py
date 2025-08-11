@@ -146,5 +146,6 @@ class Bird:
         print("Final news list", final_news_list)
 
         self.download_image(news_list=final_news_list)
+
         # saves the time
         Clock().save_time_log()

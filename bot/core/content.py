@@ -25,5 +25,4 @@ class Content:
             include_comments=False,
             favor_precision=True,
         )
-
         return output
