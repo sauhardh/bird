@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+import requests
 
 import logging
 import json
@@ -11,8 +12,9 @@ from bot.core import Parser
 from bot.core import Agent
 from .discord import DiscordWebhook
 from .time import Clock
-from bot.core import Image
+from bot.core import ImageDownload
 from bot.core import Keyword
+from bot.core import Overlay
 
 
 logging.basicConfig(
@@ -24,6 +26,7 @@ class Bird:
     file_path: Path
     env_path: Path
     last_run_time: str | None
+    discord: DiscordWebhook
 
     def __init__(self):
         self.file_path = Path.cwd().joinpath("config").joinpath("news-site.json")
@@ -66,7 +69,17 @@ class Bird:
             news_list: list[dict] = (
                 Parser(news_sites[site]).compare_time(self.last_run_time).parse()
             )
-            rephrased_list: list[dict] = Agent().message(news_list)
+
+            try:
+                rephrased_list: list[dict] = Agent().message(news_list)
+            except (ConnectionError, OSError, requests.exceptions.ConnectionError) as e:
+                logging.error(f"Network error {e}, SHUTTING DOWN!")
+                self.discord.set_info().send_info(
+                    "NETWORK ERROR",
+                    "Shutting down, due to network error while requesting groq api",
+                )
+                sys.exit(1)
+
             news_collection.extend(rephrased_list)
 
         return news_collection
@@ -88,46 +101,68 @@ class Bird:
 
         return (rejected_news, accepted_news)
 
-    def insert_entity(self, news_list: list[dict]) -> list[dict]:
+    def insert_entity(self, news_list: list[dict]):
         keyword = Keyword()
 
         for news in news_list:
             news["entity"] = keyword.extract_entities(news.get("rephrased_title", None))
 
-        return news_list
+    def download_image(self, news_list: list[dict]):
+        image = ImageDownload()
 
-    def download_image(self, news_list) -> bool:
-        image = Image()
-
-        success_list = []
         for news in news_list:
             entity = news.get("entity", None)
             if not entity:
                 logging.warning(
                     f"FORMAT ERROR: no entity key found on dictionary for index {news.get('id', -1)}"
                 )
-                continue
+                entity = news.get("title")
+                self.discord.set_info().send_info(
+                    "NO ENTITY FOUND",
+                    f"for {news.get('rephrased_title', None)}, No entity has been found. Using `title` instead",
+                )
 
-            if image.set_dest(entity).request():
-                success_list.append(news.get("id", -1))
+            img_path = image.set_dest(entity).request()
+            if img_path:
+                news["img_path"] = img_path
+            else:
+                logging.warning(f"Did not get image path to append. for {entity}")
 
-        return len(success_list) > 0
+    def overlay_image(self, news_list: list[dict]):
+        overlay = Overlay()
+
+        for news in news_list:
+            img_path = news.get("img_path", None)
+            if img_path:
+                if not overlay.find_img_to_draw(img_path):
+                    logging.warning(f"No image found with this title: {img_path}")
+                    continue
+
+                txt = news.get("rephrased_title", news.get("title", None))
+                if not txt:
+                    logging.warning(
+                        f"No title found to overlay for this img_path {img_path}"
+                    )
+                    continue
+
+                overlay.load_font().text_overlay(txt)
 
     def main(self):
         news_sites = self.load_news_site_url()
+
         news_collection = self.get_news_and_rephrase(news_sites)
 
         (rejected_news, accepted_news) = self.separate_news(news_collection)
 
         # sends this info to discord
-        discord = DiscordWebhook().set_reject().send(rejected_news)
+        self.discord = DiscordWebhook().set_reject().send(rejected_news)
 
         # gives id to each news based on index
         accepted_news = self.insert_id(accepted_news)
 
         if len(accepted_news) <= 0:
             logging.info("EARLY EXIT: No new News Found.")
-            discord.set_info().send_info(
+            self.discord.set_info().send_info(
                 "EARLY EXIT", f"No new News Found: {accepted_news}"
             )
             sys.exit()
@@ -140,12 +175,16 @@ class Bird:
             news for news in accepted_news if news.get("id", -1) not in duplicates
         ]
 
-        discord.set_reject().send(duplicate_news).set_accept().send(accepted_news)
+        self.discord.set_reject().send(duplicate_news).set_accept().send(accepted_news)
 
-        final_news_list: list[dict] = self.insert_entity(accepted_news)
-        print("Final news list", final_news_list)
+        # this updates `accepted_news` with `entity` key
+        self.insert_entity(accepted_news)
+        # this updates `accepted_news` with `img_path` key
+        self.download_image(news_list=accepted_news)
 
-        self.download_image(news_list=final_news_list)
+        print("after downloaded_image list", accepted_news)
+
+        self.overlay_image(news_list=accepted_news)
 
         # saves the time
         Clock().save_time_log()

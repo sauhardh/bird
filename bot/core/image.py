@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
-from duckduckgo_search import DDGS
+from ddgs import DDGS
 from PIL import Image, ImageFont, ImageDraw
 from PIL.Image import Image as PILImage
 from PIL.ImageDraw import ImageDraw as PILImageDraw
@@ -14,7 +14,7 @@ import time
 from config.constants import CENSOR_WORDS
 
 
-class Image:
+class ImageDownload:
     url: str = None
     max_req: int = 3
     dest_path: Path = None
@@ -40,13 +40,12 @@ class Image:
             }
         )
 
-    def set_dest_path(self, ext: str):
+    def __set_dest_path(self, ext: str):
         file_name = "".join(self.entity.split(" "))
         dir_path = Path.cwd().joinpath("config").joinpath("imgs")
         dir_path.mkdir(exist_ok=True, parents=True)
 
         file_path = dir_path.joinpath(file_name + ext)
-        print("cwd", file_path)
         self.dest_path = file_path
 
     def set_dest(self, entity: str):
@@ -59,14 +58,14 @@ class Image:
         self.url = f"https://search.brave.com/images?q={self.encoded_entity}&source=web"
         return self
 
-    def set_duckduckgo_url(self):
-        self.url_flag = "duck"
-        self.url = (
-            f"https://duckduckgo.com/?q={self.encoded_entity}&iax=images&ia=images"
-        )
-        return self
+    # def set_duckduckgo_url(self):
+    #     self.url_flag = "duck"
+    #     self.url = (
+    #         f"https://duckduckgo.com/?q={self.encoded_entity}&iax=images&ia=images"
+    #     )
+    #     return self
 
-    def select_img(self, idx: int = 0) -> str | None:
+    def __select_img(self, idx: int = 0) -> str | None:
         if not self.imgs or idx >= len(self.imgs):
             logging.warning(
                 f"Index {idx} out of range for images_divs length {len(self.imgs) if self.imgs else 0}"
@@ -74,11 +73,11 @@ class Image:
             return None
         return self.imgs[idx]
 
-    def request_img(
+    def _request_img(
         self,
     ) -> bool:
         for id in range(self.max_req):
-            img_url = self.select_img(id)
+            img_url = self.__select_img(id)
 
             if img_url is None:
                 logging.warning(
@@ -111,7 +110,7 @@ class Image:
                     case _:  # default: "image/jpeg"
                         ext = ".jpg"
 
-                self.set_dest_path(ext=ext)
+                self.__set_dest_path(ext=ext)
                 with open(self.dest_path, "wb") as f:
                     f.write(res.content)
                     logging.info(
@@ -120,9 +119,9 @@ class Image:
                     return True
         return False
 
-    def request(self) -> bool:
+    def request(self) -> str | None:
         try:
-            self.set_duckduckgo_url()
+            # self.set_duckduckgo_url()
             res: dict = DDGS().images(self.entity, max_results=10)
             imgs = [r["image"] or r["thumbnail"] for r in res if isinstance(r, dict)]
         except Exception as duck_e:
@@ -144,13 +143,13 @@ class Image:
             soup = BeautifulSoup(res.text, "html.parser")
 
             imgs = [
-                img["src"]
-                for img in soup.find_all("img")
-                if img.get("src")
-                and img["src"].startswith("http")
-                and "brave-logo" not in img["src"]
-                and "rs:fit:32:32:1:0" not in img["src"]
-                and "rs:fit:0:180:1:0" not in img["src"]
+                _img["src"]
+                for _img in soup.find_all("_img")
+                if _img.get("src")
+                and _img["src"].startswith("http")
+                and "brave-logo" not in _img["src"]
+                and "rs:fit:32:32:1:0" not in _img["src"]
+                and "rs:fit:0:180:1:0" not in _img["src"]
             ]
 
         self.imgs = imgs
@@ -161,7 +160,11 @@ class Image:
             return False
 
         self.max_req = min(self.max_req, len(self.imgs))
-        return self.request_img()
+
+        if self._request_img():
+            return self.dest_path
+        else:
+            return None
 
 
 # --------------------#
@@ -175,16 +178,15 @@ class Overlay:
     """
 
     path: Path
-    img: PILImage
+    _img: PILImage
     img_path: Path
     txt: str
 
     def __init__(self):
         self.path = Path.cwd().joinpath("config")
-        self.filter_list = ["death", "die", "dead", "sex", ""]
 
-    def find_img_to_draw(self, name: str) -> bool:
-        self.img_path = self.path.joinpath("imgs").joinpath(name)
+    def find_img_to_draw(self, img_path: str) -> bool:
+        self.img_path = Path(img_path)
 
         if not self.img_path.exists():
             logging.warning(
@@ -192,25 +194,30 @@ class Overlay:
             )
             return False
 
-        self.img = Image.open(self.img_path).convert("RGBA")
+        try:
+            self._img = Image.open(self.img_path).convert("RGBA")
+        except Exception as e:
+            logging.warning(f"Failed to open the image on path {self.img_path}")
+            return False
+
         return True
 
     def load_font(self):
         try:
-            if not self.img:
+            if not self._img:
                 logging.warning(
                     "No image found. Please call `find_img_to_draw()` beforehand"
                 )
 
             self.font = ImageFont.truetype(
                 self.path.joinpath("Roboto-Medium.ttf"),
-                size=int(self.img.height * 0.065),
+                size=int(self._img.height * 0.095),
             )
         except OSError:
             self.font = ImageFont.load_default()
         return self
 
-    def wrap_text(self, draw: PILImageDraw, max_width: int) -> list:
+    def _wrap_text(self, draw: PILImageDraw, max_width: int) -> list:
         lines = []
         words = self.txt.split(" ")
         line = ""
@@ -232,23 +239,24 @@ class Overlay:
             else:
                 lines.append(line)
                 line = word
+        if line:
             lines.append(line)
 
-            return lines
+        return lines
 
     def text_overlay(self, txt: str):
         padding = 20
-        max_width = self.img.width - padding
+        max_width = self._img.width - padding
         self.txt = txt
 
-        overlay = Image.new("RGBA", self.img.size, (255, 255, 255, 0))
+        overlay = Image.new("RGBA", self._img.size, (255, 255, 255, 0))
         draw: PILImageDraw = ImageDraw.Draw(overlay)
 
-        lines: list = self.wrap_text(draw, max_width)
+        lines: list = self._wrap_text(draw, max_width)
         line_height = self.font.getbbox("Ay")[3] - self.font.getbbox("Ay")[1]
         total_height = line_height * len(lines) + (len(lines) - 1) * 10
         # position to start text on y axis
-        y = self.img.height - total_height - (padding * 2)
+        y = self._img.height - total_height - (padding * 2)
 
         for idx, line in enumerate(lines):
             bbox = draw.textbbox(
@@ -262,7 +270,7 @@ class Overlay:
 
             text_w = bbox[2] - bbox[0]
             text_h = bbox[3] - bbox[1]
-            x = (self.img.width - text_w) / 2
+            x = (self._img.width - text_w) / 2
 
             # semi-transparent-background
             bg_padding_x = 10
@@ -270,17 +278,16 @@ class Overlay:
             draw.rectangle(
                 [
                     x - bg_padding_x,
-                    y - bg_padding_y + (idx * 3),
+                    y - bg_padding_y,
                     x + text_w + bg_padding_x,
-                    y + text_h + bg_padding_y,
+                    y + text_h + (bg_padding_y * 3),
                 ],
-                fill=(0, 0, 0, 145),
+                fill=(0, 0, 0, 170),
             )
 
             draw.text((x, y), line, font=self.font, fill="white")
             y += line_height + (bg_padding_y * 2) + 1
 
-        merged = Image.alpha_composite(self.img, overlay)
+        merged = Image.alpha_composite(self._img, overlay)
         merged.convert("RGB").save(self.img_path, quality=90)
         logging.info(f"Thumbnail saved: {self.img_path}")
-

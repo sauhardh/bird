@@ -132,7 +132,7 @@ class Agent:
         messages = [
             {"role": "assistant", "content": AI_CONTENT_FILTER},
             {"role": "user", "content": user_content},
-        ]   
+        ]
 
         chat_completion = self.client.chat.completions.create(
             messages=messages, model=self.model
@@ -146,8 +146,5 @@ class Agent:
         end_idx = string_content.find("]")
         string_content = string_content[: (end_idx + 1)]
 
-        print("string_content", string_content)
-
         to_remove_list: list = ast.literal_eval(string_content)
-
         return to_remove_list
