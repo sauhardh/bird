@@ -182,6 +182,13 @@ class Overlay:
     img_path: Path
     txt: str
 
+    PADDING = 10
+    BG_PADDING_X = 10
+    BG_PADDING_Y = 5
+    LINE_SPACING = 10
+    BG_COLOR = (0, 0, 0, 170)
+    TEXT_COLOR = "white"
+
     def __init__(self):
         self.path = Path.cwd().joinpath("config")
 
@@ -199,7 +206,6 @@ class Overlay:
         except Exception as e:
             logging.warning(f"Failed to open the image on path {self.img_path}")
             return False
-
         return True
 
     def load_font(self):
@@ -241,12 +247,14 @@ class Overlay:
                 line = word
         if line:
             lines.append(line)
-
         return lines
 
     def text_overlay(self, txt: str):
-        padding = 20
-        max_width = self._img.width - padding
+        if not txt:
+            logging.warning("No text found to overlay")
+            return
+
+        max_width = self._img.width - self.PADDING
         self.txt = txt
 
         overlay = Image.new("RGBA", self._img.size, (255, 255, 255, 0))
@@ -254,9 +262,10 @@ class Overlay:
 
         lines: list = self._wrap_text(draw, max_width)
         line_height = self.font.getbbox("Ay")[3] - self.font.getbbox("Ay")[1]
-        total_height = line_height * len(lines) + (len(lines) - 1) * 10
+        total_height = line_height * len(lines) + (len(lines) - 1) * self.LINE_SPACING
+
         # position to start text on y axis
-        y = self._img.height - total_height - (padding * 2)
+        y = self._img.height - total_height - self.PADDING
 
         for idx, line in enumerate(lines):
             bbox = draw.textbbox(
@@ -273,20 +282,18 @@ class Overlay:
             x = (self._img.width - text_w) / 2
 
             # semi-transparent-background
-            bg_padding_x = 10
-            bg_padding_y = 5
             draw.rectangle(
                 [
-                    x - bg_padding_x,
-                    y - bg_padding_y,
-                    x + text_w + bg_padding_x,
-                    y + text_h + (bg_padding_y * 2),
+                    x - self.BG_PADDING_X,
+                    y - self.BG_PADDING_Y,
+                    x + text_w + self.BG_PADDING_X,
+                    y + text_h + (self.BG_PADDING_Y * 2) + self.LINE_SPACING,
                 ],
-                fill=(0, 0, 0, 170),
+                fill=self.BG_COLOR,
             )
 
-            draw.text((x, y), line, font=self.font, fill="white")
-            y += line_height + (bg_padding_y * 2) + 1
+            draw.text((x, y), line, font=self.font, fill=self.TEXT_COLOR)
+            y += line_height + (self.BG_PADDING_Y * 2) + 1
 
         merged = Image.alpha_composite(self._img, overlay)
         merged.convert("RGB").save(self.img_path, quality=90)
