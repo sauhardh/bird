@@ -10,6 +10,7 @@ import logging
 from pathlib import Path
 import random
 import time
+import io
 
 from config.constants import CENSOR_WORDS
 
@@ -99,31 +100,48 @@ class ImageDownload:
                 continue
             else:
                 ext: str
+                unexpected = False
                 content_type = res.headers.get("Content-Type")
                 match content_type:
                     case "image/png":
                         ext = ".png"
                     case "image/gif":
                         ext = ".gif"
-                    case "image/webp":
-                        ext = ".webp"
-                    case _:  # default: "image/jpeg"
+                    # case "image/webp":
+                    #     ext = ".webp"
+                    case "image/jpeg" | "image/jpg":
                         ext = ".jpg"
+                    case _:
+                        logging.warning(f"UNEXPECTED CONTENT_TYPE: {content_type}")
+                        unexpected = True
+                        ext = ".jpg"
+
+                if unexpected:
+                    with Image.open(io.BytesIO(res.content)) as img:
+                        rgb_img = img.convert("RGB")
+                        self.__set_dest_path(ext=".jpg")
+                        rgb_img.save(self.dest_path, "JPEG", quality=90)
+                    logging.info(
+                        f"Successfully converted and downloaded image. Find it here: {self.dest_path}"
+                    )
+                    return True
 
                 self.__set_dest_path(ext=ext)
                 with open(self.dest_path, "wb") as f:
                     f.write(res.content)
-                    logging.info(
-                        f"Successfully downloaded image. Find it here: {self.dest_path}"
-                    )
-                    return True
+                logging.info(
+                    f"Successfully downloaded image. Find it here: {self.dest_path}"
+                )
+                return True
         return False
 
     def request(self) -> str | None:
         try:
             # self.set_duckduckgo_url()
             res: dict = DDGS().images(self.entity, max_results=10)
-            imgs = [r["image"] or r["thumbnail"] for r in res if isinstance(r, dict)]
+            imgs = [
+                r.get("image") or r.get("thumbnail") for r in res if isinstance(r, dict)
+            ]
         except Exception as duck_e:
             logging.warning(
                 "Error occured on requesting from duckduckgo search %s", duck_e
@@ -144,7 +162,7 @@ class ImageDownload:
 
             imgs = [
                 _img["src"]
-                for _img in soup.find_all("_img")
+                for _img in soup.find_all("img")
                 if _img.get("src")
                 and _img["src"].startswith("http")
                 and "brave-logo" not in _img["src"]

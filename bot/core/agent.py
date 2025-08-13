@@ -1,4 +1,5 @@
 from groq import Groq
+import groq
 import time
 import logging
 import json
@@ -66,7 +67,6 @@ class Agent:
             "rephrased_summary": "..."
             }}
 
-            Critical: Do not add extra any information or explanation, **no nothing extra**.
             """
 
             messages = [
@@ -80,6 +80,10 @@ class Agent:
 
             string_content = chat_completion.choices[0].message.content
 
+            if not string_content:
+                logging.warning(f"No response for article: {article['title']}")
+                continue
+
             start_idx = string_content.find("{")
             string_content = string_content[start_idx:]
 
@@ -91,8 +95,11 @@ class Agent:
                 string_content = data
 
             except json.JSONDecodeError as e:
-                logging.error("JSON decode error", e)
-                return None
+                logging.error(
+                    f"JSON decode error. Failed to parse the json. for {string_content} ",
+                    e,
+                )
+                continue
 
             string_content["link"] = article.get("link", None)
             string_content["published"] = article.get("published", None)
@@ -134,9 +141,15 @@ class Agent:
             {"role": "user", "content": user_content},
         ]
 
-        chat_completion = self.client.chat.completions.create(
-            messages=messages, model=self.model
-        )
+        try:
+            chat_completion = self.client.chat.completions.create(
+                messages=messages, model=self.model
+            )
+        except groq.APIConnectionError as e:
+            logging.warning(
+                f"Skipping article due to connection error: {chat_completion} | {e}"
+            )
+            return []
 
         string_content: str = chat_completion.choices[0].message.content
 

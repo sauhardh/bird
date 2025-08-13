@@ -6,6 +6,8 @@ import json
 import os
 import sys
 from pathlib import Path
+import time
+import random
 
 
 from bot.core import Parser
@@ -151,6 +153,7 @@ class Bird:
         publish = Publish()
 
         for news in news_list:
+            time.sleep(random.choice([7, 10, 5]))
             img_path = news.get("img_path", None)
             text = news.get("rephrased_summary")
 

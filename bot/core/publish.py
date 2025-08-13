@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 from os import getenv
 import logging
 from pathlib import Path
+import time
+
+import tweepy.errors
 
 from config.constants import X_CHARACTER_LIMIT
 
@@ -58,32 +61,60 @@ class Publish:
             logging.warning(f"Nothing to tweet. Empty text: {text}, replies: {replies}")
             return
 
-        res = self.v2_client.create_tweet(text=replies.pop(0))
+        while replies:
+            try:
+                res = self.v2_client.create_tweet(text=replies[0])
+                if not res.data:
+                    logging.warning(f"Failed to tweet. {res}")
+                    return
+                tweet_id = res.data.get("id", None)
+                logging.info("Tweeted successfully!")
+                replies.pop(0)
+                break
+            except tweepy.errors.TooManyRequests as e:
+                logging.warning(
+                    f"Rate limit hit, too many request. Sleeping for 30s. Error: {e}"
+                )
+                time.sleep(30)
+            except Exception as e:
+                logging.warning(f"Unexpected error occured {e}")
+                return
 
-        if not res.data:
-            logging.warning(f"Failed to tweet. {res}")
-            return
-
-        logging.info("Tweeted successfully!")
-        tweet_id = res.data.get("id", None)
-
+        # replies
         for reply in replies:
             if not tweet_id:
                 logging.warning("Failed to parse tweet_id. Skipping!")
                 continue
 
-            res = self.v2_client.create_tweet(text=reply, in_reply_to_tweet_id=tweet_id)
-            if res.data:
-                reply_id = res.data.get("id", None)
-                logging.info(
-                    f"SUCCESS REPLY: For tweet {tweet_id}. replied successfully with id: {reply_id}"
-                )
-            else:
-                logging.warning(f"Failed to reply a tweet with id {reply_id}.")
+            time.sleep(3)  # delay
+            retry = 3
+
+            while retry > 0:
+                try:
+                    res = self.v2_client.create_tweet(
+                        text=reply, in_reply_to_tweet_id=tweet_id
+                    )
+                    if res.data:
+                        reply_id = res.data.get("id", None)
+                        logging.info(
+                            f"SUCCESS REPLY: For tweet {tweet_id}. replied successfully with id: {reply_id}"
+                        )
+                    else:
+                        logging.warning(f"Failed to reply a tweet with id {reply_id}.")
+
+                    break
+                except tweepy.errors.TooManyRequests as e:
+                    logging.warning(
+                        f"Rate limit hit, too many request. Sleeping for 30s. Error: {e}"
+                    )
+                    time.sleep(30)
+                    retry -= 1
+                except Exception as e:
+                    logging.warning(f"Unexpected error replying to tweet. {e}")
+                    break
 
     def post_text_with_img(self, text: str, img_path: str):
         img_path = Path(img_path)
-
         media = self.v1_api.media_upload(img_path)
         media_id = media.media_id
 
@@ -92,33 +123,64 @@ class Publish:
             return
 
         replies: list = self.__replies(text)
-
         if not replies:
             logging.warning(f"Nothing to tweet. Empty text: {text}, replies: {replies}")
             return
 
-        res = self.v2_client.create_tweet(text=replies.pop(0), media_ids=[media_id])
+        retry = 3
+        while replies:
+            try:
+                res = self.v2_client.create_tweet(text=replies[0], media_ids=[media_id])
 
-        if not res.data:
-            logging.warning(f"Failed to tweet with text. {res}")
-            return
+                if not res.data:
+                    logging.warning(f"Failed to tweet with text. {res}")
+                    return
 
-        logging.info("Tweeted successfully!")
-        tweet_id = res.data.get("id", None)
+                tweet_id = res.data.get("id", None)
+                replies.pop(0)
+                logging.info(f"Tweeted successfully with media! Tweet Id: {tweet_id}")
+                break
+            except tweepy.errors.TooManyRequests as e:
+                logging.warning(
+                    f"Rate limit hit, too many request. Sleeping for 30s. Error: {e}"
+                )
+                time.sleep(30)
+                retry -= 1
+            except Exception as e:
+                logging.warning(f"Unexpected error occured {e}")
+                return
 
         for reply in replies:
             if not tweet_id:
                 logging.warning("Failed to parse tweet_id. Skipping!")
                 continue
 
-            res = self.v2_client.create_tweet(text=reply, in_reply_to_tweet_id=tweet_id)
-            if res.data:
-                reply_id = res.data.get("id", None)
-                logging.info(
-                    f"SUCCESS REPLY: For tweet {tweet_id}. replied successfully with id: {reply_id}"
-                )
-            else:
-                logging.warning(f"Failed to reply a tweet with id {reply_id}.")
+            time.sleep(3)  # delay
+            retry = 3
+
+            while retry > 0:
+                try:
+                    res = self.v2_client.create_tweet(
+                        text=reply, in_reply_to_tweet_id=tweet_id
+                    )
+                    if res.data:
+                        reply_id = res.data.get("id", None)
+                        logging.info(
+                            f"SUCCESS REPLY: For tweet {tweet_id}. replied successfully with id: {reply_id}"
+                        )
+                    else:
+                        logging.warning(f"Failed to reply a tweet with id {reply_id}.")
+
+                    break
+                except tweepy.errors.TooManyRequests as e:
+                    logging.warning(
+                        f"Rate limit hit, too many request. Sleeping for 30s. Error: {e}"
+                    )
+                    time.sleep(30)
+                    retry -= 1
+                except Exception as e:
+                    logging.warning(f"Unexpected error replying to tweet. {e}")
+                    break
 
 
 if __name__ == "__main__":
