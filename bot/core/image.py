@@ -280,7 +280,7 @@ class Overlay:
                     x - bg_padding_x,
                     y - bg_padding_y,
                     x + text_w + bg_padding_x,
-                    y + text_h + (bg_padding_y * 3),
+                    y + text_h + (bg_padding_y * 2),
                 ],
                 fill=(0, 0, 0, 170),
             )

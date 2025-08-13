@@ -108,3 +108,6 @@ CENSOR_WORDS: set = {
     # Sensitive terms
     "nazi",
 }
+
+
+X_CHARACTER_LIMIT = 280

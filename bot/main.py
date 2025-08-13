@@ -15,7 +15,7 @@ from .time import Clock
 from bot.core import ImageDownload
 from bot.core import Keyword
 from bot.core import Overlay
-
+from bot.core import Publish
 
 logging.basicConfig(
     level=logging.INFO, format=" <%(name)s>   %(levelname)s => %(message)s "
@@ -147,16 +147,27 @@ class Bird:
 
                 overlay.load_font().text_overlay(txt)
 
+    def post(self, news_list: list):
+        publish = Publish()
+
+        for news in news_list:
+            img_path = news.get("img_path", None)
+            text = news.get("rephrased_summary")
+
+            if not img_path:
+                publish.post_text_only(text=text)
+                logging.info(f"PUBLISHED-TWEET >>text only: {text}")
+            else:
+                publish.post_text_with_img(text=text, img_path=img_path)
+                logging.info(f"PUBLISHED-TWEET >>image: {text}")
+
     def main(self):
         news_sites = self.load_news_site_url()
 
         news_collection = self.get_news_and_rephrase(news_sites)
-
         (rejected_news, accepted_news) = self.separate_news(news_collection)
-
         # sends this info to discord
         self.discord = DiscordWebhook().set_reject().send(rejected_news)
-
         # gives id to each news based on index
         accepted_news = self.insert_id(accepted_news)
 
@@ -176,15 +187,13 @@ class Bird:
         ]
 
         self.discord.set_reject().send(duplicate_news).set_accept().send(accepted_news)
-
         # this updates `accepted_news` with `entity` key
         self.insert_entity(accepted_news)
         # this updates `accepted_news` with `img_path` key
         self.download_image(news_list=accepted_news)
-
-        print("after downloaded_image list", accepted_news)
-
         self.overlay_image(news_list=accepted_news)
+        self.post(news_list=accepted_news)
 
+        self.discord.set_info().send_info("COMPLETED", "Tweeting process completed")
         # saves the time
         Clock().save_time_log()

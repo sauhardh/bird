@@ -16,6 +16,7 @@ requests = "^2.32.4"
 spacy = "^3.8.7"
 pillow = "^11.3.0"
 ddgs = "^9.5.2"
+tweepy = "^4.16.0"
 
 
 [build-system]
