@@ -12,7 +12,7 @@ import random
 
 from bot.core import Parser
 from bot.core import Agent
-from .discord import DiscordWebhook
+from bot.core import DiscordWebhook
 from .time import Clock
 from bot.core import ImageDownload
 from bot.core import Keyword
@@ -76,7 +76,7 @@ class Bird:
                 rephrased_list: list[dict] = Agent().message(news_list)
             except (ConnectionError, OSError, requests.exceptions.ConnectionError) as e:
                 logging.error(f"Network error {e}, SHUTTING DOWN!")
-                self.discord.set_info().send_info(
+                self.discord.send_info(
                     "NETWORK ERROR",
                     "Shutting down, due to network error while requesting groq api",
                 )
@@ -119,7 +119,7 @@ class Bird:
                     f"FORMAT ERROR: no entity key found on dictionary for index {news.get('id', -1)}"
                 )
                 entity = news.get("title")
-                self.discord.set_info().send_info(
+                self.discord.send_info(
                     "NO ENTITY FOUND",
                     f"for {news.get('rephrased_title', None)}, No entity has been found. Using `title` instead",
                 )
@@ -153,7 +153,7 @@ class Bird:
         publish = Publish()
 
         for news in news_list:
-            time.sleep(random.choice([7, 10, 5]))
+            time.sleep(random.choice([10, 12, 15, 11]))
             img_path = news.get("img_path", None)
             text = news.get("rephrased_summary")
 
@@ -176,9 +176,7 @@ class Bird:
 
         if len(accepted_news) <= 0:
             logging.info("EARLY EXIT: No new News Found.")
-            self.discord.set_info().send_info(
-                "EARLY EXIT", f"No new News Found: {accepted_news}"
-            )
+            self.discord.send_info("EARLY EXIT", f"No new News Found: {accepted_news}")
             sys.exit()
 
         duplicates: list = Agent().find_duplicate(news_list=accepted_news)
@@ -197,6 +195,6 @@ class Bird:
         self.overlay_image(news_list=accepted_news)
         self.post(news_list=accepted_news)
 
-        self.discord.set_info().send_info("COMPLETED", "Tweeting process completed")
+        self.discord.send_info("COMPLETED", "Tweeting process completed")
         # saves the time
         Clock().save_time_log()

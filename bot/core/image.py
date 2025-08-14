@@ -171,7 +171,6 @@ class ImageDownload:
             ]
 
         self.imgs = imgs
-        logging.info("Images are %s", imgs)
 
         if not self.imgs:
             logging.warning("No valid images found for query: %s", self.entity)
@@ -283,7 +282,7 @@ class Overlay:
         total_height = line_height * len(lines) + (len(lines) - 1) * self.LINE_SPACING
 
         # position to start text on y axis
-        y = self._img.height - total_height - self.PADDING
+        y = self._img.height - total_height - self.PADDING - self.BG_PADDING_Y
 
         for idx, line in enumerate(lines):
             bbox = draw.textbbox(

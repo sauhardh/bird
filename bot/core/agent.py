@@ -7,6 +7,7 @@ import ast
 
 from config.constants import MODEL, AI_CONTENT_REPHRASE, AI_CONTENT_FILTER
 from .content import Content
+from .discord import DiscordWebhook
 
 
 class Agent:
@@ -51,6 +52,7 @@ class Agent:
             - Summary: rewrite it in a casual, human-like tone — as if a person is reacting to the news on X (Twitter).
                 Can include light emotion, urgency, or opinion (without adding false facts).
                 Should feel natural, like a real user posting about it.
+            - Respond with ONLY valid JSON, escape all quotes properly, and do not include extra text.
 
             3. Score the **viral potential** from 0 to 10 based on:
             - Public interest
@@ -59,6 +61,7 @@ class Agent:
 
             📌 Only reply with a JSON object in **this exact format**:
 
+            ```
             {{
             "viral_score": 0-10 (10 being highest),
             "viral": true/false,
@@ -66,6 +69,7 @@ class Agent:
             "rephrased_title": "...", 
             "rephrased_summary": "..."
             }}
+            ```
 
             """
 
@@ -99,6 +103,10 @@ class Agent:
                     f"JSON decode error. Failed to parse the json. for {string_content} ",
                     e,
                 )
+                DiscordWebhook().send_info(
+                    "JSON DECODE ERROR",
+                    f"SKIPPING: Failed to parse the json for {string_content}",
+                )
                 continue
 
             string_content["link"] = article.get("link", None)
@@ -128,12 +136,13 @@ class Agent:
         - Identify duplicate news items based on their summaries following your rules.
         - Return ONLY the JSON list of duplicate IDs to remove, nothing else.
         - If there are no duplicates, return [] exactly.
+        - Critical: Do not add extra any information or explanation, **no nothing extra**.
+
 
         📌 Only reply with a JSON object in **this exact format**:
         ```
         []
         ```
-        Critical: Do not add extra any information or explanation, **no nothing extra**.
         """
 
         messages = [

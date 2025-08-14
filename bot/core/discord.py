@@ -20,28 +20,32 @@ class DiscordWebhook:
         self.flag = "accept"
         return self
 
-    def set_info(self):
+    def __set_info(self):
         self.flag = "info"
-        return self
 
     def send_info(self, title: str, info: str):
-        if self.flag == "info":
-            data = {
-                "contents": "",
-                "embeds": [
-                    {
-                        "title": title,
-                        "description": info,
-                        "color": 0x347C1B,
-                    }
-                ],
-            }
+        """
+        Sends information you wish to `info` channel
+        This automatically handles the `set_info()` i.e. setting the flag to "info"
+        """
+        self.__set_info()
 
-            response = requests.post(DISCORD_INFO_WEBHOOK, json=data)
-            if response.status_code == 204:
-                logging.info(f"{self.flag} sent to discord channel successfully")
-            else:
-                logging.warning(f"Failed to send {self.flag} to discord channel")
+        data = {
+            "contents": "",
+            "embeds": [
+                {
+                    "title": title,
+                    "description": info,
+                    "color": 0x347C1B,
+                }
+            ],
+        }
+
+        response = requests.post(DISCORD_INFO_WEBHOOK, json=data)
+        if response.status_code == 204:
+            logging.info(f"{self.flag} sent to discord channel successfully")
+        else:
+            logging.warning(f"Failed to send {self.flag} to discord channel")
 
         return self
 

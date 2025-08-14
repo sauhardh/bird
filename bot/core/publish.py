@@ -1,20 +1,23 @@
 import tweepy
 from tweepy.api import API
 from dotenv import load_dotenv
+import tweepy.errors
 
 from os import getenv
 import logging
 from pathlib import Path
 import time
+import datetime
 
-import tweepy.errors
-
+from .discord import DiscordWebhook
 from config.constants import X_CHARACTER_LIMIT
 
 
 class Publish:
     v1_api: API
     v2_client: tweepy.Client
+    discord = DiscordWebhook()
+    NUM_OF_RETRY = 3
 
     def __init__(self):
         load_dotenv()
@@ -35,7 +38,7 @@ class Publish:
         )
         self.v1_api = tweepy.API(auth)
 
-    def __replies(self, text: str) -> list:
+    def __get_tweets(self, text: str) -> list:
         replies: list[str] = []
 
         if len(text) > X_CHARACTER_LIMIT:
@@ -54,133 +57,137 @@ class Publish:
 
         return replies
 
-    def post_text_only(self, text: str):
-        replies: list = self.__replies(text)
+    def _reply_with_text(self, reply: str, tweet_id: str):
+        RETRY = self.NUM_OF_RETRY
+        while RETRY > 0:
+            try:
+                time.sleep(10)  # delay 10s before reply
+                RETRY -= 1
+                res = self.v2_client.create_tweet(
+                    text=reply, in_reply_to_tweet_id=tweet_id
+                )
+                if res.data:
+                    reply_id = res.data.get("id", None)
+                    logging.info(
+                        f"SUCCESS REPLY: For tweet {tweet_id}. replied successfully with id: {reply_id}"
+                    )
+                else:
+                    logging.warning(f"Failed to reply a tweet with id {reply_id}.")
+                break
 
+            except tweepy.errors.TooManyRequests as e:
+                reset_time = int(
+                    e.response.headers.get("x-rate-limit-reset", time.time() + 900)
+                )
+                wait_sec = max(0, reset_time - time.time())
+                readable_format = datetime.datetime.fromtimestamp(reset_time)
+
+                logging.warning(
+                    f"Rate limit hit on upload. Reset at {readable_format} <{wait_sec}> seconds away."
+                )
+                self.discord.send_info(
+                    "RATE LIMIT HIT (media upload)",
+                    f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
+                )
+                if wait_sec < 300:
+                    time.sleep(wait_sec)
+                else:
+                    return
+
+            except Exception as e:
+                logging.warning(f"Unexpected error replying to tweet. {e}")
+                break
+
+    def post_text_only(self, text: str, media_id: str | None = None):
+        replies: list = self.__get_tweets(text)
         if not replies:
             logging.warning(f"Nothing to tweet. Empty text: {text}, replies: {replies}")
             return
 
-        while replies:
+        RETRY = self.NUM_OF_RETRY
+        while RETRY > 0:
             try:
-                res = self.v2_client.create_tweet(text=replies[0])
+                RETRY -= 1
+                res = self.v2_client.create_tweet(
+                    text=replies[0], media_ids=[media_id] if media_id else None
+                )
+
                 if not res.data:
                     logging.warning(f"Failed to tweet. {res}")
                     return
+
                 tweet_id = res.data.get("id", None)
                 logging.info("Tweeted successfully!")
                 replies.pop(0)
                 break
             except tweepy.errors.TooManyRequests as e:
-                logging.warning(
-                    f"Rate limit hit, too many request. Sleeping for 30s. Error: {e}"
+                reset_time = int(
+                    e.response.headers.get("x-rate-limit-reset", time.time() + 900)
                 )
-                time.sleep(30)
+                wait_sec = max(0, reset_time - time.time())
+                readable_format = datetime.datetime.fromtimestamp(reset_time)
+
+                logging.warning(
+                    f"Rate limit hit on upload. Reset at {readable_format} <{wait_sec}> seconds away."
+                )
+                self.discord.send_info(
+                    "RATE LIMIT HIT (media upload)",
+                    f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
+                )
+                if wait_sec < 300:
+                    time.sleep(wait_sec)
+                else:
+                    return
+
             except Exception as e:
                 logging.warning(f"Unexpected error occured {e}")
                 return
-
         # replies
         for reply in replies:
             if not tweet_id:
                 logging.warning("Failed to parse tweet_id. Skipping!")
                 continue
-
-            time.sleep(3)  # delay
-            retry = 3
-
-            while retry > 0:
-                try:
-                    res = self.v2_client.create_tweet(
-                        text=reply, in_reply_to_tweet_id=tweet_id
-                    )
-                    if res.data:
-                        reply_id = res.data.get("id", None)
-                        logging.info(
-                            f"SUCCESS REPLY: For tweet {tweet_id}. replied successfully with id: {reply_id}"
-                        )
-                    else:
-                        logging.warning(f"Failed to reply a tweet with id {reply_id}.")
-
-                    break
-                except tweepy.errors.TooManyRequests as e:
-                    logging.warning(
-                        f"Rate limit hit, too many request. Sleeping for 30s. Error: {e}"
-                    )
-                    time.sleep(30)
-                    retry -= 1
-                except Exception as e:
-                    logging.warning(f"Unexpected error replying to tweet. {e}")
-                    break
+            self._reply_with_text(reply, tweet_id)
 
     def post_text_with_img(self, text: str, img_path: str):
         img_path = Path(img_path)
-        media = self.v1_api.media_upload(img_path)
-        media_id = media.media_id
+        media_id = None
+
+        # upload media
+        RETRY = self.NUM_OF_RETRY
+        while RETRY > 0:
+            try:
+                RETRY -= 1
+                media = self.v1_api.media_upload(img_path)
+                media_id = media.media_id
+                break
+
+            except tweepy.errors.TooManyRequests as e:
+                reset_time = int(
+                    e.response.headers.get("x-rate-limit-reset", time.time() + 900)
+                )
+                wait_sec = max(0, reset_time - time.time())
+                readable_format = datetime.datetime.fromtimestamp(reset_time)
+
+                logging.warning(
+                    f"Rate limit hit on upload. Reset at {readable_format} <{wait_sec}> seconds away."
+                )
+                self.discord.send_info(
+                    "RATE LIMIT HIT (media upload)",
+                    f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
+                )
+
+                if wait_sec < 300:
+                    time.sleep(wait_sec)
+                else:
+                    return
 
         if not media_id:
             logging.warning(f"Failed to parse media_id. {media_id}")
             return
 
-        replies: list = self.__replies(text)
-        if not replies:
-            logging.warning(f"Nothing to tweet. Empty text: {text}, replies: {replies}")
-            return
-
-        retry = 3
-        while replies:
-            try:
-                res = self.v2_client.create_tweet(text=replies[0], media_ids=[media_id])
-
-                if not res.data:
-                    logging.warning(f"Failed to tweet with text. {res}")
-                    return
-
-                tweet_id = res.data.get("id", None)
-                replies.pop(0)
-                logging.info(f"Tweeted successfully with media! Tweet Id: {tweet_id}")
-                break
-            except tweepy.errors.TooManyRequests as e:
-                logging.warning(
-                    f"Rate limit hit, too many request. Sleeping for 30s. Error: {e}"
-                )
-                time.sleep(30)
-                retry -= 1
-            except Exception as e:
-                logging.warning(f"Unexpected error occured {e}")
-                return
-
-        for reply in replies:
-            if not tweet_id:
-                logging.warning("Failed to parse tweet_id. Skipping!")
-                continue
-
-            time.sleep(3)  # delay
-            retry = 3
-
-            while retry > 0:
-                try:
-                    res = self.v2_client.create_tweet(
-                        text=reply, in_reply_to_tweet_id=tweet_id
-                    )
-                    if res.data:
-                        reply_id = res.data.get("id", None)
-                        logging.info(
-                            f"SUCCESS REPLY: For tweet {tweet_id}. replied successfully with id: {reply_id}"
-                        )
-                    else:
-                        logging.warning(f"Failed to reply a tweet with id {reply_id}.")
-
-                    break
-                except tweepy.errors.TooManyRequests as e:
-                    logging.warning(
-                        f"Rate limit hit, too many request. Sleeping for 30s. Error: {e}"
-                    )
-                    time.sleep(30)
-                    retry -= 1
-                except Exception as e:
-                    logging.warning(f"Unexpected error replying to tweet. {e}")
-                    break
+        # create_tweet_with_potential_reply
+        self.post_text_only(text, media_id)
 
 
 if __name__ == "__main__":
