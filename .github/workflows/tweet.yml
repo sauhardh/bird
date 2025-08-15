@@ -41,9 +41,9 @@ jobs:
                git commit -m "Updated time.txt" || echo "No changes to commit"
         
           - name: Push changes
-            env:
-               GITHUB_TOKEN: ${{secrets.BIRD_PAT_TOKENS}}
-            run: git push
+            uses: ad-m/github-push-action@v0.6.0
+            with:
+               github_token: ${{secrets.BIRD_PAT_TOKENS}}
 
 
 
