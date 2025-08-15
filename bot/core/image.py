@@ -277,7 +277,7 @@ class Overlay:
         overlay = Image.new("RGBA", self._img.size, (255, 255, 255, 0))
         draw: ImageDraw.ImageDraw = ImageDraw.Draw(overlay)
 
-        lines: list = self._wrap_text(draw, max_width)
+        lines: list = self._wrap_text(overlay, max_width)
         line_height = self.font.getbbox("Ay")[3] - self.font.getbbox("Ay")[1]
         total_height = line_height * len(lines) + (len(lines) - 1) * self.LINE_SPACING
 
