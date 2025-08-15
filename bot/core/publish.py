@@ -108,8 +108,18 @@ class Publish:
         while RETRY > 0:
             try:
                 RETRY -= 1
+
+                text = replies[0]
+                texts = text.split(".", maxsplit=1)
+                line = ""
+                for idx, text_part in enumerate(texts):
+                    if idx == 1:
+                        line += f"\n{text_part.strip()}"
+                    else:
+                        line += f"{text_part.strip()} "
+
                 res = self.v2_client.create_tweet(
-                    text=replies[0], media_ids=[media_id] if media_id else None
+                    text=line, media_ids=[media_id] if media_id else None
                 )
 
                 if not res.data:
