@@ -12,15 +12,23 @@ jobs:
         steps:
           - name: Checkout code
             uses: actions/checkout@v4
+            with:
+              fetch-depth: 0 # for rebase
 
           - name: Set up python
             uses: actions/setup-python@v5
             with:
                 python-version: "3.12"
 
+          - name: Sync latest main
+            run: |
+              git config --local user.email "sauhardhakafle0@gmail.com"
+              git config --local user.name "SauhardhaKafle"
+              git pull --rebase origin main || true
+    
+
           - name: Install poetry
             run: pip install poetry
-
           - name: Install dependencies
             run: poetry install --no-interaction --no-root
 
@@ -32,13 +40,12 @@ jobs:
                 X_ACCESS_TOKEN_SECRET: ${{ secrets.X_ACCESS_TOKEN_SECRET }} 
                 GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}     
             run: poetry run python -m bot
-
+          
           - name: Commit and Push Changes
             run: |
-               git config --local user.email "sauhardhakafle0@gmail.com"
-               git config --local user.name "SauhardhaKafle"
-               git add .
+               git add time.txt
                git commit -m "Updated time.txt" || echo "No changes to commit"
+               git pull --rebase origin main || true
         
           - name: Push changes
             uses: ad-m/github-push-action@v0.6.0
