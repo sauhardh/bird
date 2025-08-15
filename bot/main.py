@@ -73,7 +73,7 @@ class Bird:
             )
 
             try:
-                rephrased_list: list[dict] = Agent(api_key=_api_key).message(news_list)
+                rephrased_list: list[dict] = Agent().message(news_list)
             except (ConnectionError, OSError, requests.exceptions.ConnectionError) as e:
                 logging.error(f"Network error {e}, SHUTTING DOWN!")
                 self.discord.send_info(
