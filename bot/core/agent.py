@@ -14,9 +14,9 @@ class Agent:
     client: Groq
     model: str
 
-    def __init__(self, model: str = MODEL):
+    def __init__(self, api_key: str, model: str = MODEL):
         # This automatically infers the api_key argument from the GROQ_API_KEY environment variable if it is not provided.
-        self.client = Groq()
+        self.client = Groq(api_key=api_key)
         self.model = model
 
     def message(self, news_list: dict) -> list:
