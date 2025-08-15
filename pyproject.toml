@@ -19,6 +19,7 @@ pillow = "^11.3.0"
 ddgs = "^9.5.2"
 tweepy = "^4.16.0"
 pilmoji = "^2.0.4"
+emoji = "<2.0.0"
 
 
 [build-system]

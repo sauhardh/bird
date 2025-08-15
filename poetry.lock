@@ -400,17 +400,16 @@ files = [
 
 [[package]]
 name = "emoji"
-version = "2.14.1"
+version = "1.7.0"
 description = "Emoji for Python"
 optional = false
-python-versions = ">=3.7"
+python-versions = "*"
 files = [
-    {file = "emoji-2.14.1-py3-none-any.whl", hash = "sha256:35a8a486c1460addb1499e3bf7929d3889b2e2841a57401903699fef595e942b"},
-    {file = "emoji-2.14.1.tar.gz", hash = "sha256:f8c50043d79a2c1410ebfae833ae1868d5941a67a6cd4d18377e2eb0bd79346b"},
+    {file = "emoji-1.7.0.tar.gz", hash = "sha256:65c54533ea3c78f30d0729288998715f418d7467de89ec258a31c0ce8660a1d1"},
 ]
 
 [package.extras]
-dev = ["coverage", "pytest (>=7.4.4)"]
+dev = ["coverage", "coveralls", "pytest"]
 
 [[package]]
 name = "feedparser"
@@ -2313,4 +2312,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.12, <3.14"
-content-hash = "ed40da31d86c7f2e7869255c5fd21984a885a4b1b72ea84ae47bb26d2849d3f0"
+content-hash = "d9d45ede2f1eba1e01ec9e673646b190473a345d04801fa238aa53db07ffbab9"
