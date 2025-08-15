@@ -2,8 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 from ddgs import DDGS
 from PIL import Image, ImageFont, ImageDraw
-from PIL.Image import Image as PILImage
-from PIL.ImageDraw import ImageDraw as PILImageDraw
+from pilmoji import Pilmoji
 
 import urllib.parse
 import logging
@@ -195,7 +194,7 @@ class Overlay:
     """
 
     path: Path
-    _img: PILImage
+    _img: Image.Image
     img_path: Path
     txt: str
 
@@ -240,7 +239,7 @@ class Overlay:
             self.font = ImageFont.load_default()
         return self
 
-    def _wrap_text(self, draw: PILImageDraw, max_width: int) -> list:
+    def _wrap_text(self, overlay: Image.Image, max_width: int) -> list:
         lines = []
         words = self.txt.split(" ")
         line = ""
@@ -254,8 +253,9 @@ class Overlay:
                 word = "".join(letters)
 
             test_line = f"{line} {word}".strip()
-            bbox = draw.textbbox((0, 0), test_line, font=self.font)
-            line_w = bbox[2] - bbox[0]
+
+            with Pilmoji(overlay) as pilmoji:
+                (line_w, _) = pilmoji.getsize(test_line, font=self.font)
 
             if line_w <= max_width:
                 line = test_line
@@ -275,28 +275,25 @@ class Overlay:
         self.txt = txt
 
         overlay = Image.new("RGBA", self._img.size, (255, 255, 255, 0))
-        draw: PILImageDraw = ImageDraw.Draw(overlay)
+        draw: ImageDraw.ImageDraw = ImageDraw.Draw(overlay)
 
         lines: list = self._wrap_text(draw, max_width)
         line_height = self.font.getbbox("Ay")[3] - self.font.getbbox("Ay")[1]
         total_height = line_height * len(lines) + (len(lines) - 1) * self.LINE_SPACING
 
         # position to start text on y axis
-        y = self._img.height - total_height - self.PADDING - self.BG_PADDING_Y
+        y = (
+            self._img.height
+            - total_height
+            - self.PADDING
+            - (self.LINE_SPACING * len(lines))
+        )
 
-        for idx, line in enumerate(lines):
-            bbox = draw.textbbox(
-                (
-                    0,
-                    0,
-                ),
-                line,
-                font=self.font,
-            )
+        for line in lines:
+            with Pilmoji(overlay) as pilmoji:
+                (text_w, text_h) = pilmoji.getsize(text=line, font=self.font)
 
-            text_w = bbox[2] - bbox[0]
-            text_h = bbox[3] - bbox[1]
-            x = (self._img.width - text_w) / 2
+            x = int((self._img.width - text_w) / 2)
 
             # semi-transparent-background
             draw.rectangle(
@@ -309,7 +306,9 @@ class Overlay:
                 fill=self.BG_COLOR,
             )
 
-            draw.text((x, y), line, font=self.font, fill=self.TEXT_COLOR)
+            with Pilmoji(overlay) as pilmoji:
+                pilmoji.text((x, y), line, font=self.font, fill=self.TEXT_COLOR)
+
             y += line_height + (self.BG_PADDING_Y * 2) + 1
 
         merged = Image.alpha_composite(self._img, overlay)
