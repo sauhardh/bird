@@ -2,8 +2,8 @@ name: Post Tweet
 
 on:
     schedule:
-        - cron: "0 6-23/2 * * *" # 6 AM -- 10 PM every 2hr
-        - cron: "0 0 * * *" # 12 AM
+        - cron: "0 6-23/3 * * *" # 6 AM -- 10 PM every 3hr
+        - cron: "0 1 * * *" # 1 AM
     workflow_dispatch:
 
 jobs:
@@ -46,11 +46,8 @@ jobs:
                git add .
                git commit -m "Updated time.txt" || echo "No changes to commit"
                git pull --rebase origin main || true
+               git push origin main
         
-          - name: Push changes
-            uses: ad-m/github-push-action@v0.6.0
-            with:
-                github_token: ${{secrets.BIRD_PAT_TOKEN}}
 
 
 

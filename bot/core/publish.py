@@ -9,6 +9,7 @@ from pathlib import Path
 import time
 import datetime
 import sys
+import random
 
 from .discord import DiscordWebhook
 from config.constants import X_CHARACTER_LIMIT
@@ -62,7 +63,9 @@ class Publish:
         RETRY = self.NUM_OF_RETRY
         while RETRY > 0:
             try:
-                time.sleep(10)  # delay 10s before reply
+                time.sleep(
+                    random.choice([10, 12, 13])
+                )  # delay some seconds before reply
                 RETRY -= 1
                 res = self.v2_client.create_tweet(
                     text=reply, in_reply_to_tweet_id=tweet_id
@@ -112,8 +115,9 @@ class Publish:
         RETRY = self.NUM_OF_RETRY
         while RETRY > 0:
             try:
-                RETRY -= 1
+                time.sleep(random.choice([9, 8, 10]))  # delay some seconds before reply
 
+                RETRY -= 1
                 text = replies[0]
                 texts = text.split(".", maxsplit=1)
                 line = ""
@@ -176,6 +180,7 @@ class Publish:
         RETRY = self.NUM_OF_RETRY
         while RETRY > 0:
             try:
+                time.sleep(random.choice([5, 10, 9]))  # delay some seconds before reply
                 RETRY -= 1
                 media = self.v1_api.media_upload(img_path)
                 media_id = media.media_id
