@@ -93,14 +93,14 @@ class Publish:
                     f"RATE LIMIT HIT (media upload)<_reply_with_text>. {RETRY}",
                     f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
                 )
-                if wait_sec < 300:
+                if wait_sec < 400:
                     time.sleep(wait_sec)
                 else:
                     self.discord.send_info(
                         "Exiting Process",
                         "from <_reply_with_text>.",
                     )
-                    sys.exit(1)
+                    sys.exit(0)
 
             except Exception as e:
                 logging.warning(f"Unexpected error replying to tweet. {e}")
@@ -153,14 +153,14 @@ class Publish:
                     f"RATE LIMIT HIT (media upload)<post_text_only>. {RETRY}",
                     f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
                 )
-                if wait_sec < 300:
+                if wait_sec < 400:
                     time.sleep(wait_sec)
                 else:
                     self.discord.send_info(
                         "Exiting Process",
                         "from <post_text_only>.",
                     )
-                    sys.exit(1)
+                    sys.exit(0)
 
             except Exception as e:
                 logging.warning(f"Unexpected error occured {e}")
@@ -201,14 +201,14 @@ class Publish:
                     f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
                 )
 
-                if wait_sec < 300:
+                if wait_sec < 400:
                     time.sleep(wait_sec)
                 else:
                     self.discord.send_info(
                         "Exiting Process",
                         "from <post_text_with_img>.",
                     )
-                    sys.exit(1)
+                    sys.exit(0)
 
         if not media_id:
             logging.warning(f"Failed to parse media_id. {media_id}")
