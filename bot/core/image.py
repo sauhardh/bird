@@ -307,7 +307,14 @@ class Overlay:
             )
 
             with Pilmoji(overlay) as pilmoji:
-                pilmoji.text((x, y), line, font=self.font, fill=self.TEXT_COLOR)
+                pilmoji.text(
+                    (x, y),
+                    line,
+                    font=self.font,
+                    fill=self.TEXT_COLOR,
+                    stroke_width=2,
+                    stroke_fill=(0, 0, 0),
+                )
 
             y += line_height + (self.BG_PADDING_Y * 2) + 1
 
