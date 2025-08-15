@@ -51,7 +51,7 @@ class Agent:
             - Suitable for social media sharing
             - Summary: rewrite it in a casual, human-like tone — as if a person is reacting to the news on X (Twitter).
                 Can include light emotion, urgency, or opinion (without adding false facts).
-                Should feel natural, like a real user posting about it. You can put related emoji on it.
+                Should feel natural, like a real user posting about it. If there is country involved, you can put country's flag emoji on it.
             - Respond with ONLY valid JSON, Double check if necessary but do not include extra text.
 
             3. Score the **viral potential** from 0 to 10 based on:

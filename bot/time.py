@@ -49,3 +49,7 @@ class Clock:
         """
         dt: str = str(datetime.now(timezone.utc))
         self.file_path.write_text(dt)
+
+
+if __name__ == "__main__":
+    Clock().save_time_log()
