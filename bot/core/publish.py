@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 import time
 import datetime
+import sys
 
 from .discord import DiscordWebhook
 from config.constants import X_CHARACTER_LIMIT
@@ -83,16 +84,20 @@ class Publish:
                 readable_format = datetime.datetime.fromtimestamp(reset_time)
 
                 logging.warning(
-                    f"Rate limit hit on upload. Reset at {readable_format} <{wait_sec}> seconds away."
+                    f"Rate limit hit on upload<_reply_with_text>. Reset at {readable_format} <{wait_sec}> seconds away."
                 )
                 self.discord.send_info(
-                    "RATE LIMIT HIT (media upload)",
+                    f"RATE LIMIT HIT (media upload)<_reply_with_text>. {RETRY}",
                     f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
                 )
                 if wait_sec < 300:
                     time.sleep(wait_sec)
                 else:
-                    return
+                    self.discord.send_info(
+                        "Exiting Process",
+                        "from <_reply_with_text>.",
+                    )
+                    sys.exit(1)
 
             except Exception as e:
                 logging.warning(f"Unexpected error replying to tweet. {e}")
@@ -138,16 +143,20 @@ class Publish:
                 readable_format = datetime.datetime.fromtimestamp(reset_time)
 
                 logging.warning(
-                    f"Rate limit hit on upload. Reset at {readable_format} <{wait_sec}> seconds away."
+                    f"Rate limit hit on upload<post_text_only>. Reset at {readable_format} <{wait_sec}> seconds away."
                 )
                 self.discord.send_info(
-                    "RATE LIMIT HIT (media upload)",
+                    f"RATE LIMIT HIT (media upload)<post_text_only>. {RETRY}",
                     f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
                 )
                 if wait_sec < 300:
                     time.sleep(wait_sec)
                 else:
-                    return
+                    self.discord.send_info(
+                        "Exiting Process",
+                        "from <post_text_only>.",
+                    )
+                    sys.exit(1)
 
             except Exception as e:
                 logging.warning(f"Unexpected error occured {e}")
@@ -180,17 +189,21 @@ class Publish:
                 readable_format = datetime.datetime.fromtimestamp(reset_time)
 
                 logging.warning(
-                    f"Rate limit hit on upload. Reset at {readable_format} <{wait_sec}> seconds away."
+                    f"Rate limit hit on upload<post_text_with_img>. Reset at {readable_format} <{wait_sec}> seconds away."
                 )
                 self.discord.send_info(
-                    "RATE LIMIT HIT (media upload)",
+                    f"RATE LIMIT HIT (media upload)<post_text_with_img>. RETRY: {RETRY}",
                     f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
                 )
 
                 if wait_sec < 300:
                     time.sleep(wait_sec)
                 else:
-                    return
+                    self.discord.send_info(
+                        "Exiting Process",
+                        "from <post_text_with_img>.",
+                    )
+                    sys.exit(1)
 
         if not media_id:
             logging.warning(f"Failed to parse media_id. {media_id}")

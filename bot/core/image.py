@@ -220,7 +220,7 @@ class Overlay:
         try:
             self._img = Image.open(self.img_path).convert("RGBA")
         except Exception as e:
-            logging.warning(f"Failed to open the image on path {self.img_path}")
+            logging.warning(f"Failed to open the image on path {self.img_path}. {e}")
             return False
         return True
 
