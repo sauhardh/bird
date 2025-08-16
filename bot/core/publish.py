@@ -124,7 +124,7 @@ class Publish:
                 line = ""
                 for idx, text_part in enumerate(texts):
                     if idx == 1:
-                        line += f"\n{text_part.strip()}"
+                        line += f".\n\n{text_part.strip()}"
                     else:
                         line += f"{text_part.strip()} "
 
