@@ -2,8 +2,7 @@ name: Post Tweet
 
 on:
     schedule:
-        - cron: "0 6-23/3 * * *" # 6 AM -- 10 PM every 3hr
-        - cron: "0 1 * * *" # 1 AM
+        - cron: "0 6-23/4 * * *" # 6 AM -- 10 PM every 4hr
     workflow_dispatch:
 
 jobs:
