@@ -64,7 +64,7 @@ class Publish:
         while RETRY > 0:
             try:
                 time.sleep(
-                    random.choice([10, 12, 13])
+                    random.choice([13, 15, 20])
                 )  # delay some seconds before reply
                 RETRY -= 1
                 res = self.v2_client.create_tweet(
@@ -81,7 +81,7 @@ class Publish:
 
             except tweepy.errors.TooManyRequests as e:
                 reset_time = int(
-                    e.response.headers.get("x-rate-limit-reset", time.time() + 900)
+                    e.response.headers.get("x-rate-limit-reset", time.time() + 1000)
                 )
                 wait_sec = max(0, reset_time - time.time())
                 readable_format = datetime.datetime.fromtimestamp(reset_time)
@@ -90,7 +90,7 @@ class Publish:
                     f"Rate limit hit on upload<_reply_with_text>. Reset at {readable_format} <{wait_sec}> seconds away."
                 )
                 self.discord.send_info(
-                    f"RATE LIMIT HIT (media upload)<_reply_with_text>. {RETRY}",
+                    f"RATE LIMIT HIT (reply upload)<_reply_with_text>. {RETRY}",
                     f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
                 )
                 if wait_sec < 400:
@@ -115,8 +115,9 @@ class Publish:
         RETRY = self.NUM_OF_RETRY
         while RETRY > 0:
             try:
-                time.sleep(random.choice([9, 8, 10]))  # delay some seconds before reply
-
+                time.sleep(
+                    random.choice([21, 15, 19])
+                )  # delay some seconds before posting text
                 RETRY -= 1
                 text = replies[0]
                 texts = text.split(".", maxsplit=1)
@@ -150,7 +151,7 @@ class Publish:
                     f"Rate limit hit on upload<post_text_only>. Reset at {readable_format} <{wait_sec}> seconds away."
                 )
                 self.discord.send_info(
-                    f"RATE LIMIT HIT (media upload)<post_text_only>. {RETRY}",
+                    f"RATE LIMIT HIT (text only upload)<post_text_only>. {RETRY}",
                     f"Reset at `{readable_format}`. <{wait_sec}> seconds away.",
                 )
                 if wait_sec < 400:
@@ -180,7 +181,9 @@ class Publish:
         RETRY = self.NUM_OF_RETRY
         while RETRY > 0:
             try:
-                time.sleep(random.choice([5, 10, 9]))  # delay some seconds before reply
+                time.sleep(
+                    random.choice([20, 34, 29, 42, 61])
+                )  # delay some seconds before reply
                 RETRY -= 1
                 media = self.v1_api.media_upload(img_path)
                 media_id = media.media_id

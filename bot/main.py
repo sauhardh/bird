@@ -153,7 +153,7 @@ class Bird:
         publish = Publish()
 
         for news in news_list:
-            time.sleep(random.choice([10, 12, 15, 11]))
+            time.sleep(random.choice([45, 42, 50, 48]))
             img_path = news.get("img_path", None)
             text = news.get("rephrased_summary")
 

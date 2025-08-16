@@ -49,8 +49,8 @@ What to avoid:
 
 When writing the **rephrased title**:
 - **Keep names of famous people** (like Trump, Elon Musk, Putin) when they appear in the original.
-- Use emotionally engaging words like: “shocking”, “massive”, “slams”, “explodes”, “threatens”, “arrests”, “surges”.
-- Create **urgency** and **curiosity** so users want to read more.
+- Use emotionally engaging words.
+- Create **curiosity** so users want to read more.
 
 Also rate the story with a **viral_score (0 to 10)** based on current trends.
 
