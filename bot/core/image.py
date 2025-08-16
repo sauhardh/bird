@@ -85,14 +85,14 @@ class ImageDownload:
                 )
                 continue
 
-            time.sleep(random.choice([3.1, 3.5, 4.7, 4.2]))
+            time.sleep(random.choice([3.1, 3.5, 4.7, 4.2, 5.6]))
             try:
                 res = self.session.get(img_url, timeout=10)
             except Exception as e:
                 logging.warning("Error on downloading image from url %s", e)
                 continue
 
-            if res.status_code not in (200, 2001):
+            if res.status_code not in (200, 201):
                 logging.warning(
                     f"Failed to get image url for index {id} out of {self.max_req}"
                 )
@@ -100,20 +100,25 @@ class ImageDownload:
             else:
                 ext: str
                 unexpected = False
-                content_type = res.headers.get("Content-Type")
+                content_type = (
+                    res.headers.get("Content-Type").split(";")[0].strip().lower()
+                )
                 match content_type:
                     case "image/png":
                         ext = ".png"
                     case "image/gif":
                         ext = ".gif"
-                    # case "image/webp":
-                    #     ext = ".webp"
                     case "image/jpeg" | "image/jpg":
                         ext = ".jpg"
-                    case _:
+                    case "image/webp" | "image/avif":
                         logging.warning(f"UNEXPECTED CONTENT_TYPE: {content_type}")
                         unexpected = True
                         ext = ".jpg"
+                    case _:
+                        logging.warning(
+                            f"Unsupported Image format. SKIPPING: {content_type}"
+                        )
+                        continue
 
                 if unexpected:
                     with Image.open(io.BytesIO(res.content)) as img:
