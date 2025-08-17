@@ -58,6 +58,7 @@ class Agent:
             - Public interest
             - Relevance to trending topics
             - Involvement of celebrities, politics, scandals, or surprising developments
+            - If It involves **opinion**, **commentary**, **speculation**, **reaction**, give it *low score*.
 
             📌 Only reply with a JSON object in **this exact format**:
 

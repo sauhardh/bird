@@ -91,12 +91,12 @@ class Bird:
     ) -> tuple[list[dict], list[dict]]:
         """
         This separate the news based on if it is `viral` and based on `viral_score`.
-        if `viral` is `True` and    `viral_score` >= 7, post is accepted else rejected
+        if `viral` is `True` and    `viral_score` >= 8, post is accepted else rejected
         """
         rejected_news, accepted_news = [], []
 
         for news in news_collection:
-            if news.get("viral", True) and news.get("viral_score", 8) >= 7:
+            if news.get("viral", True) and news.get("viral_score", 8) >= 8:
                 accepted_news.append(news)
             else:
                 rejected_news.append(news)
