@@ -3,6 +3,7 @@ from spacy import Language
 
 import logging
 import subprocess
+import re
 
 
 class Keyword:
@@ -25,7 +26,10 @@ class Keyword:
     def extract_entities(self, text: str) -> str | None:
         doc = self.nlp(text)
         entities = [
-            ent.text for ent in doc.ents if ent.label_ in ("PERSON", "GPE", "ORG")
+            ent.text.strip()
+            for ent in doc.ents
+            if ent.label_ in ("PERSON", "GPE", "ORG")
+            and re.search("[a-zA-Z]", ent.text)
         ]
 
         if len(entities) <= 0:

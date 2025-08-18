@@ -140,6 +140,7 @@ class ImageDownload:
         return False
 
     def request(self) -> str | None:
+        imgs = []
         try:
             # self.set_duckduckgo_url()
             res: dict = DDGS().images(self.entity, max_results=10)
@@ -148,31 +149,33 @@ class ImageDownload:
             ]
         except Exception as duck_e:
             logging.warning(
-                "Error occured on requesting from duckduckgo search %s", duck_e
+                "Error occured on requesting from duckduckgo search |  Reason: %s",
+                duck_e,
             )
 
+        if not imgs:
             try:
                 self.set_brave_url()
                 res = self.session.get(self.url, timeout=10)
+
+                soup = BeautifulSoup(res.text, "html.parser")
+
+                imgs = [
+                    _img["src"]
+                    for _img in soup.find_all("img")
+                    if _img.get("src")
+                    and _img["src"].startswith("http")
+                    and "brave-logo" not in _img["src"]
+                    and "rs:fit:32:32:1:0" not in _img["src"]
+                    and "rs:fit:0:180:1:0" not in _img["src"]
+                ]
+
             except Exception as brave_e:
                 logging.warning(
                     "Error occured on requesting from brave search %s",
                     brave_e,
                 )
                 return False
-
-        if self.url_flag == "brave":
-            soup = BeautifulSoup(res.text, "html.parser")
-
-            imgs = [
-                _img["src"]
-                for _img in soup.find_all("img")
-                if _img.get("src")
-                and _img["src"].startswith("http")
-                and "brave-logo" not in _img["src"]
-                and "rs:fit:32:32:1:0" not in _img["src"]
-                and "rs:fit:0:180:1:0" not in _img["src"]
-            ]
 
         self.imgs = imgs
 
