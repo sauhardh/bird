@@ -10,6 +10,7 @@ from pathlib import Path
 import random
 import time
 import io
+import re
 
 from config.constants import CENSOR_WORDS
 
@@ -41,11 +42,17 @@ class ImageDownload:
         )
 
     def __set_dest_path(self, ext: str):
-        file_name = "".join(self.entity.split(" "))
-        dir_path = Path.cwd().joinpath("config").joinpath("imgs")
+        file_name = re.sub("[^a-zA-Z0-9_-]", "_", self.entity).lower()
+        dir_path = Path.cwd().joinpath("config", "imgs")
         dir_path.mkdir(exist_ok=True, parents=True)
 
         file_path = dir_path.joinpath(file_name + ext)
+
+        counter = 1
+        while file_path.exists():
+            file_path = dir_path.joinpath(f"{file_name}_{counter}" + ext)
+            counter += 1
+
         self.dest_path = file_path
 
     def set_dest(self, entity: str):
