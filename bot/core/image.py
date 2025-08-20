@@ -42,7 +42,7 @@ class ImageDownload:
         )
 
     def __set_dest_path(self, ext: str):
-        file_name = re.sub("[^a-zA-Z0-9_-]", "_", self.entity).lopdawer()
+        file_name = re.sub("[^a-zA-Z0-9_-]", "_", self.entity).lower()
         dir_path = Path.cwd().joinpath("config", "imgs")
         dir_path.mkdir(exist_ok=True, parents=True)
 
