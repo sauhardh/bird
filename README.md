@@ -1,105 +1,98 @@
-# 𝘉𝘐𝘙𝘋 🐦
-> **The autonomous news hawk for X.**  
-> *Sifting signal from the digital static, forging graphics on the fly, and dropping breaking dispatches before the world blinks.*
+# Bird 🐦
+
+> An automated bot that finds breaking news, scores viral potential with AI, generates headline images, and posts to X (Twitter).
 
 ---
 
 ```
-   RSS Feeds ──► [ Groq / Llama ] ──► [ spaCy Entity ] ──► [ Visual Forge ] ──► [ X / Twitter ]
-        │              │                      │                   │                  │
-        ▼              ▼                      ▼                   ▼                  ▼
-    Wire Tap      Viral Radar            Who & What           The Canvas       Stealth Broadcast
-        │
-        └───────────────────────────────► Discord Telemetry 📡
+[ RSS Feeds ] ──► [ Groq AI ] ──► [ spaCy NLP ] ──► [ Image Overlay ] ──► [ X (Twitter) ]
+                         │                                                   │
+                         ▼                                                   ▼
+                  Discord Logs                                       Anti-Bot Delay
 ```
 
 ---
 
-## ✦ The Anatomy of the Flight
+## How It Works
 
-The internet never sleeps, but it constantly mumbles. **Bird** is a predator of noise—an automated newsroom engineered to spot friction, craft narrative, and broadcast at the speed of thought.
-
-| Chamber | Role | What It Actually Does |
-| :--- | :--- | :--- |
-| **📡 The Wire Tap** | *Scout* | Glides through syndicated RSS feeds. A persistent internal clock ensures it never drinks from yesterday’s well twice. |
-| **🧠 The Pulse Reader** | *Editor-in-Chief* | Feeds raw stories into **Groq-accelerated Llama**. Rates viral friction (0–10), tosses out dry whitepapers, strips duplicate echoes across rival publishers, and rewrites the headline with human pulse and casual bite. |
-| **🎯 The Entity Hound** | *Investigator* | Dispatches **spaCy NLP** into the text to extract key protagonists, locations, and organizations. |
-| **🎨 The Darkroom** | *Graphic Artist* | Hunts visuals across **DuckDuckGo** & **Brave**, then stamps bold, readable headline typography and emojis using **Pillow** & **Pilmoji**—complete with profanity dampeners. |
-| **⚡ The Broadcaster** | *Courier* | Fires the dispatch onto **X** with randomized human jitter (40–60s pauses) and automatic thread-splitting to fly under automated radar. |
-| **📡 Mission Control** | *Black Box* | Streams every accepted scoop, rejected pitch, and rate-limit warning directly into dedicated **Discord** telemetry channels. |
+1. **RSS Ingestion**: Scans RSS feeds listed in `config/news-site.json`. Tracks the last run time in `config/time.txt` so it only processes new stories.
+2. **AI Filtering & Rephrasing**: Sends articles to Groq (`meta-llama/llama-4-scout-17b-16e-instruct`):
+   - Scores viral potential from 0 to 10 (accepts score $\ge 8$).
+   - Rewrites headlines and summaries in a punchy, casual tone suitable for X.
+   - Filters out duplicates across multiple feeds.
+3. **Entity Extraction**: Uses `spaCy` to extract key people, places, and organizations from headlines for accurate image queries.
+4. **Image & Text Overlay**:
+   - Searches DuckDuckGo or Brave for matching images.
+   - Masks sensitive/profane words.
+   - Overlays the headline and emojis directly onto the image using Pillow and Pilmoji.
+5. **Publishing to X**:
+   - Uploads the image and posts the tweet via the X API.
+   - Automatically splits text into replies if it exceeds character limits.
+   - Uses randomized delays between actions to prevent bot detection and account suspension.
+6. **Discord Notifications**: Sends real-time updates to dedicated Discord channels (accepted news, rejected news, duplicate removals, and error logs).
 
 ---
 
-## ✦ Blueprint: How The Engine Thinks
+## Pipeline
 
 ```mermaid
 flowchart LR
-    A[RSS Ingest] --> B{Seen Before?}
-    B -- Yes --> X[Drop]
-    B -- No --> C[Groq AI Evaluation]
+    A[RSS Feed] --> B{New Article?}
+    B -- No --> End[Skip]
+    B -- Yes --> C[Groq AI Evaluation]
     C --> D{Viral Score >= 8?}
-    D -- No --> R1[Discord Reject Hub]
-    D -- Yes --> E[Deduplicate Cross-Feed]
-    E --> F[spaCy Entity Extraction]
-    F --> G[Image Search & Download]
-    G --> H[Headline Canvas Overlay]
-    H --> I[Human-Jitter Dispatch to X]
-    I --> J[Discord Mission Telemetry]
+    D -- No --> R[Log to Discord & Reject]
+    D -- Yes --> E[Deduplicate Across Feeds]
+    E --> F[Extract Entities with spaCy]
+    F --> G[Search & Download Image]
+    G --> H[Overlay Headline with Pillow]
+    H --> I[Post to X with Human Delay]
+    I --> J[Log to Discord]
 ```
 
 ---
 
-## ✦ Quick Flight Setup
+## Setup & Configuration
 
-### 1. Fuel the Environment
+### 1. Installation
+
 ```bash
-# Clone the perch & enter
 git clone https://github.com/sauhardh/bird.git
 cd bird
-
-# Equip dependencies
 poetry install
 ```
 
-### 2. Supply the Keys
-Drop your operational credentials into a `.env` in the root:
+### 2. Environment Variables
 
-```ini
-# AI Brain
-GROQ_API_KEY=gsk_...
+Create a `.env` file in the root directory:
 
-# Broadcast Tower (X / Twitter API)
-X_API_KEY=...
-X_API_KEY_SECRET=...
-X_ACCESS_TOKEN=...
-X_ACCESS_TOKEN_SECRET=...
+```env
+GROQ_API_KEY=your_groq_api_key
+
+X_API_KEY=your_x_api_key
+X_API_KEY_SECRET=your_x_api_key_secret
+X_ACCESS_TOKEN=your_x_access_token
+X_ACCESS_TOKEN_SECRET=your_x_access_token_secret
 ```
 
-### 3. Tune the Radars
-- **News Wires**: Add or cull RSS sources inside [`config/news-site.json`](config/news-site.json).
-- **Mission Control**: Hook your Discord webhook feeds inside [`config/constants.py`](config/constants.py).
-- **Viral Compass**: Adjust trending tokens and censorship masks in [`config/constants.py`](config/constants.py).
+### 3. Configuration
 
-### 4. Release the Hawk
+- **RSS Sources**: Add or edit news feeds in [`config/news-site.json`](config/news-site.json).
+- **Discord Webhooks**: Configure accept, reject, and info webhook URLs in [`config/constants.py`](config/constants.py).
+- **Viral Keywords & Filters**: Adjust target keywords and censor lists in [`config/constants.py`](config/constants.py).
+
+### 4. Run the Bot
+
 ```bash
 poetry run python -m bot
 ```
 
 ---
 
-## ✦ The Survival Code *(Operating in the Wild)*
+## Bot Protection & Rate Limits
 
-> [!WARNING]
-> **X is hostile to automatons.**  
-> Unchecked bots get clipped early. Bird is built with defensive mechanics:
-> - **Synthetic Hesitation**: Injects organic random sleep intervals between uploads and replies.
-> - **Self-Threading**: Gracefully chops run-on dispatches into threaded replies when characters overflow.
-> - **Dynamic Rate-Limiting**: Catches `429 Too Many Requests`, honors `x-rate-limit-reset` timers, or aborts safely while paging Discord.
-> - **Safe-Harbor Filtering**: Sanitizes high-risk triggers to keep your account out of algorithmic purgatory.
+- **Human-like Delays**: Adds random wait times (40–60 seconds) between actions to stay off bot detection radars.
+- **Rate Limit Handlers**: Catches Twitter `429 Too Many Requests` responses, waits for the reset window when short, or exits cleanly while pinging Discord.
+- **Word Filtering**: Replaces sensitive or banned terms with asterisks before generating images to protect account health.
 
----
-
-<p align="center">
-  <i>Curated by algorithms. Styled like press. Moving faster than the cycle.</i>
-</p>
 
